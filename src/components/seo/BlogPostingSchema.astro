@@ -1,0 +1,51 @@
+---
+export interface Props {
+  title: string
+  description: string
+  slug: string
+  datePublished: string
+  dateModified?: string
+  image: string
+  authorName?: string
+  authorUrl?: string
+}
+
+const { title, description, slug, datePublished, dateModified, image, authorName, authorUrl } = Astro.props
+const site = 'https://outsidersurfacademy.com'
+const url = `${site}${slug}`
+const authorPage = authorUrl ?? `${site}/about-outsider-surf-academy`
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description,
+  url,
+  datePublished,
+  dateModified: dateModified ?? datePublished,
+  inLanguage: 'en-US',
+  image: {
+    '@type': 'ImageObject',
+    url: `${site}${image}`,
+    width: 1200,
+    height: 630,
+  },
+  author: authorName
+    ? { '@type': 'Person', '@id': `${authorPage}#person`, name: authorName, url: authorPage }
+    : { '@type': 'Organization', name: 'Outsider Surf Academy', url: site },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Outsider Surf Academy',
+    url: site,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${site}/images/logo-schema.png`,
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': url,
+  },
+}
+---
+<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

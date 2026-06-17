@@ -1,0 +1,30 @@
+---
+interface Props {
+  name: string
+  description: string
+  price: string
+  url: string
+  image?: string
+  currency?: string
+}
+const { name, description, price, url, image, currency = 'USD' } = Astro.props
+const site = 'https://outsidersurfacademy.com'
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name,
+  description,
+  ...(image ? { image: image.startsWith('http') ? image : `${site}${image}` } : {}),
+  provider: { '@type': 'LocalBusiness', name: 'Outsider Surf Academy', url: site },
+  areaServed: { '@type': 'Place', name: 'Tamarindo, Guanacaste, Costa Rica' },
+  offers: {
+    '@type': 'Offer',
+    price,
+    priceCurrency: currency,
+    availability: 'https://schema.org/InStock',
+    url: url.startsWith('http') ? url : `${site}${url}`,
+    seller: { '@type': 'Organization', name: 'Outsider Surf Academy' },
+  },
+}
+---
+<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

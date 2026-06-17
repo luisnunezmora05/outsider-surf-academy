@@ -1,0 +1,2374 @@
+---
+export const prerender = false
+
+import { isSupabaseConfigured, missingSupabaseEnv, supabase } from '../lib/supabase'
+import { formatCurrency, formatTime, formatPricingTiers } from '../lib/classTypes'
+import PaymentConfig from '../components/admin/PaymentConfig.astro'
+import BookingSettings from '../components/admin/BookingSettings.astro'
+import '../styles/global.css'
+
+const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD ?? 'admin'
+const authCookie = Astro.cookies.get('pvss_admin')
+const isAuthenticated = authCookie?.value === ADMIN_PASSWORD
+
+const DOW_LABELS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const DISABLED_CAMP_TABS = ['camp-bookings', 'camp-rooms', 'camp-sessions', 'camp-settings']
+const FLORIDA_PRICE_TIERS_EXAMPLE = `[
+  { "min_participants": 1, "max_participants": 1, "price_per_person": 75 },
+  { "min_participants": 2, "max_participants": 2, "price_per_person": 70 },
+  { "min_participants": 3, "max_participants": null, "price_per_person": 65 }
+]`
+const DEFAULT_PRICE_TIER_ROWS = [
+  { min_participants: 1, max_participants: 1, price_per_person: 75, price_type: 'per_person', label: 'Private' },
+  { min_participants: 2, max_participants: 2, price_per_person: 70, price_type: 'per_person', label: 'Semi-private' },
+  { min_participants: 3, max_participants: null, price_per_person: 65, price_type: 'per_person', label: 'Group' },
+]
+
+function parsePriceTiers(raw: FormDataEntryValue | null) {
+  const text = String(raw ?? '').trim()
+  if (!text) return null
+
+  try {
+    const parsed = JSON.parse(text)
+    if (!Array.isArray(parsed)) return null
+
+    return parsed
+      .map((tier: any) => ({
+        min_participants: Math.max(1, Number(tier.min_participants) || 1),
+        max_participants:
+          tier.max_participants === null || tier.max_participants === undefined || tier.max_participants === ''
+            ? null
+            : Math.max(1, Number(tier.max_participants) || 1),
+        price_per_person: Math.max(0, Number(tier.price_per_person) || 0),
+        price_type: tier.price_type === 'total' ? 'total' : 'per_person',
+        label: tier.label ? String(tier.label) : null,
+      }))
+      .filter((tier: any) => tier.price_per_person > 0)
+  } catch {
+    return null
+  }
+}
+
+function stringifyPriceTiers(tiers: any) {
+  if (!Array.isArray(tiers) || tiers.length === 0) return ''
+  return JSON.stringify(tiers, null, 2)
+}
+
+function getTierRows(tiers: any) {
+  if (!Array.isArray(tiers) || tiers.length === 0) return []
+  return tiers.map((tier: any) => ({
+    min_participants: Math.max(1, Number(tier.min_participants) || 1),
+    max_participants:
+      tier.max_participants === null || tier.max_participants === undefined || tier.max_participants === ''
+        ? ''
+        : Math.max(1, Number(tier.max_participants) || 1),
+    price_per_person: Math.max(0, Number(tier.price_per_person) || 0),
+    price_type: tier.price_type === 'total' ? 'total' : 'per_person',
+    label: tier.label ? String(tier.label) : '',
+  }))
+}
+
+function parsePriceTiersFromForm(form: FormData) {
+  const usesVisualEditor = form.get('price_tiers_visual') === 'true'
+  const mins = form.getAll('price_tier_min')
+  const maxes = form.getAll('price_tier_max')
+  const prices = form.getAll('price_tier_price')
+  const labels = form.getAll('price_tier_label')
+  const types = form.getAll('price_tier_type')
+
+  const tiers = mins
+    .map((rawMin, index) => {
+      const rawPrice = String(prices[index] ?? '').trim()
+      if (!rawPrice) return null
+
+      const rawMax = String(maxes[index] ?? '').trim()
+      return {
+        min_participants: Math.max(1, Number(rawMin) || 1),
+        max_participants: rawMax ? Math.max(1, Number(rawMax) || 1) : null,
+        price_per_person: Math.max(0, Number(rawPrice) || 0),
+        price_type: String(types[index] ?? 'per_person') === 'total' ? 'total' : 'per_person',
+        label: String(labels[index] ?? '').trim() || null,
+      }
+    })
+    .filter((tier: any) => tier && tier.price_per_person > 0)
+    .sort((a: any, b: any) => a.min_participants - b.min_participants)
+
+  if (usesVisualEditor) return tiers.length > 0 ? tiers : null
+  if (tiers.length > 0) return tiers
+  return parsePriceTiers(form.get('price_tiers'))
+}
+
+function parseSlotCapacity(raw: FormDataEntryValue | null, fallback = 1) {
+  const parsed = parseInt(String(raw ?? ''), 10)
+  if (Number.isNaN(parsed)) return Math.max(0, fallback)
+  return Math.max(0, parsed)
+}
+
+function parseBookingMode(raw: FormDataEntryValue | null) {
+  return String(raw ?? 'shared') === 'exclusive' ? 'exclusive' : 'shared'
+}
+
+// ── POST handlers ──────────────────────────────────────────────────────────
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData()
+  const action = form.get('action') as string
+
+  if (action === 'login') {
+    const password = form.get('password') as string
+    if (password === ADMIN_PASSWORD) {
+      Astro.cookies.set('pvss_admin', ADMIN_PASSWORD, {
+        httpOnly: true, secure: true, sameSite: 'lax', maxAge: 60 * 60 * 8, path: '/',
+      })
+    }
+    return Astro.redirect('/admin')
+  }
+
+  if (!isAuthenticated) return Astro.redirect('/admin')
+  if (!isSupabaseConfigured) return Astro.redirect('/admin?setup=missing-supabase-env')
+
+  try {
+    // ── Camp actions ──────────────────────────────────────────────────────
+    if (action === 'upsert_camp_room') {
+      const id = form.get('id') as string | null
+      const amenitiesRaw = (form.get('amenities') as string ?? '').split(',').map(a => a.trim()).filter(Boolean)
+      const payload = {
+        name: form.get('name'),
+        description: (form.get('description') as string) || null,
+        bed_type: form.get('bed_type') || 'Queen',
+        capacity: parseInt(form.get('capacity') as string) || 2,
+        amenities: amenitiesRaw,
+        photo_url: (form.get('photo_url') as string) || null,
+        floor_label: (form.get('floor_label') as string) || null,
+        is_active: form.get('is_active') === 'true',
+        sort_order: parseInt(form.get('sort_order') as string) || 0,
+      }
+      if (id) await supabase.from('camp_rooms').update(payload).eq('id', id)
+      else await supabase.from('camp_rooms').insert(payload)
+      return Astro.redirect('/admin?tab=camp-rooms')
+    }
+
+    if (action === 'delete_camp_room') {
+      await supabase.from('camp_rooms').delete().eq('id', form.get('id') as string)
+      return Astro.redirect('/admin?tab=camp-rooms')
+    }
+
+    if (action === 'upsert_camp_session') {
+      const id = form.get('id') as string | null
+      const startDate = form.get('start_date') as string
+      const campType = 'custom'
+      const nights = parseInt(form.get('nights') as string) || 1
+      const startObj = new Date(startDate + 'T12:00:00')
+      startObj.setDate(startObj.getDate() + nights)
+      const endDate = startObj.toISOString().slice(0, 10)
+      const sessionPayload = {
+        camp_type: campType,
+        start_date: startDate,
+        end_date: endDate,
+        price_per_person_usd: parseFloat(form.get('price_per_person_usd') as string),
+        is_active: form.get('is_active') === 'true',
+      }
+      let sessionId = id
+      if (id) {
+        await supabase.from('camp_sessions').update(sessionPayload).eq('id', id)
+      } else {
+        const { data: newSession } = await supabase.from('camp_sessions').insert(sessionPayload).select('id').single()
+        sessionId = newSession?.id
+      }
+      // Sync rooms
+      if (sessionId) {
+        const roomIds = (form.getAll('room_ids') as string[]).filter(Boolean)
+        await supabase.from('camp_session_rooms').delete().eq('session_id', sessionId)
+        if (roomIds.length > 0) {
+          await supabase.from('camp_session_rooms').insert(roomIds.map(rid => ({ session_id: sessionId, room_id: rid })))
+        }
+      }
+      return Astro.redirect('/admin?tab=camp-sessions')
+    }
+
+    if (action === 'delete_camp_session') {
+      await supabase.from('camp_sessions').delete().eq('id', form.get('id') as string)
+      return Astro.redirect('/admin?tab=camp-sessions')
+    }
+
+    if (action === 'update_camp_booking_status') {
+      const { id, status } = Object.fromEntries(form)
+      await supabase.from('camp_bookings').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+      return Astro.redirect('/admin?tab=camp-bookings')
+    }
+
+    if (action === 'save_camp_settings') {
+      await supabase.from('camp_settings').update({
+        payment_mode: form.get('payment_mode'),
+        deposit_percentage: parseInt(form.get('deposit_percentage') as string) || 30,
+        updated_at: new Date().toISOString(),
+      }).eq('id', 1)
+      return Astro.redirect('/admin?tab=camp-settings')
+    }
+    // ── End camp actions ──────────────────────────────────────────────────
+
+    if (action === 'update') {
+      const id = form.get('id') as string
+      const status = form.get('status') as string
+      await supabase.from('bookings').update({ status }).eq('id', id)
+      return Astro.redirect('/admin?tab=bookings')
+    }
+
+    // Wipe all bookings (test cleanup) — both lesson and camp reservations
+    if (action === 'delete_all_bookings') {
+      await supabase.from('bookings').delete().not('id', 'is', null)
+      await supabase.from('camp_bookings').delete().not('id', 'is', null)
+      return Astro.redirect('/admin?tab=booking-settings&cleared=1')
+    }
+
+    if (action === 'create_class_type') {
+      const id = String(form.get('id') ?? '').trim()
+      if (!id) return Astro.redirect('/admin?tab=class-types')
+
+      const minParticipants = parseInt(form.get('min_participants_per_booking') as string)
+      const maxParticipants = parseInt(form.get('max_participants_per_booking') as string)
+      const normalizedMin = Number.isNaN(minParticipants) ? 1 : Math.max(1, minParticipants)
+      const normalizedMaxRaw = Number.isNaN(maxParticipants) ? normalizedMin : Math.max(1, maxParticipants)
+      const normalizedMax = Math.max(normalizedMin, normalizedMaxRaw)
+      const included = String(form.get('included') ?? '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean)
+
+      await supabase.from('class_types').insert({
+        id,
+        name: form.get('name'),
+        category: form.get('category') || 'lesson',
+        price_per_person: parseFloat(form.get('price_per_person') as string),
+        price_tiers: parsePriceTiersFromForm(form),
+        min_participants_per_booking: normalizedMin,
+        max_participants_per_booking: normalizedMax,
+        max_capacity: parseInt(form.get('max_capacity') as string),
+        duration_minutes: parseInt(form.get('duration_minutes') as string),
+        variant_group: (form.get('variant_group') as string)?.trim() || null,
+        description: form.get('description'),
+        included: included.length > 0 ? included : ['Surfboard', 'Leash', 'Rash guard', 'Certified instructor'],
+        badge: (form.get('badge') as string) || null,
+        active: form.get('active') === 'true',
+        sort_order: parseInt(form.get('sort_order') as string) || 0,
+      })
+
+      const firstSlotTime = String(form.get('first_slot_start_time') ?? '').trim()
+      if (firstSlotTime) {
+        await supabase.from('weekly_slots').upsert(
+          {
+            class_type_id: id,
+            day_of_week: parseInt(form.get('first_slot_day_of_week') as string) || 1,
+            start_time: firstSlotTime,
+            capacity: parseSlotCapacity(form.get('first_slot_capacity'), normalizedMax),
+            booking_mode: parseBookingMode(form.get('first_slot_booking_mode')),
+          },
+          { onConflict: 'class_type_id,day_of_week,start_time' }
+        )
+      }
+      return Astro.redirect('/admin?tab=class-types')
+    }
+
+    if (action === 'update_class_type') {
+      const id = form.get('id') as string
+      const minParticipants = parseInt(form.get('min_participants_per_booking') as string)
+      const maxParticipants = parseInt(form.get('max_participants_per_booking') as string)
+      const normalizedMin = Number.isNaN(minParticipants) ? 1 : Math.max(1, minParticipants)
+      const normalizedMaxRaw = Number.isNaN(maxParticipants) ? normalizedMin : Math.max(1, maxParticipants)
+      const normalizedMax = Math.max(normalizedMin, normalizedMaxRaw)
+      await supabase.from('class_types').update({
+        name: form.get('name'),
+        category: form.get('category') || 'lesson',
+        price_per_person: parseFloat(form.get('price_per_person') as string),
+        price_tiers: parsePriceTiersFromForm(form),
+        min_participants_per_booking: normalizedMin,
+        max_participants_per_booking: normalizedMax,
+        max_capacity: parseInt(form.get('max_capacity') as string),
+        duration_minutes: parseInt(form.get('duration_minutes') as string),
+        variant_group: (form.get('variant_group') as string)?.trim() || null,
+        description: form.get('description'),
+        badge: (form.get('badge') as string) || null,
+        active: form.get('active') === 'true',
+        sort_order: parseInt(form.get('sort_order') as string),
+      }).eq('id', id)
+      return Astro.redirect('/admin?tab=class-types')
+    }
+
+    if (action === 'add_weekly_slot') {
+      const class_type_id = form.get('class_type_id') as string
+      const day_of_week = parseInt(form.get('day_of_week') as string)
+      const start_time = form.get('start_time') as string
+      await supabase.from('weekly_slots').upsert(
+        {
+          class_type_id,
+          day_of_week,
+          start_time,
+          capacity: parseSlotCapacity(form.get('capacity'), 1),
+          booking_mode: parseBookingMode(form.get('booking_mode')),
+        },
+        { onConflict: 'class_type_id,day_of_week,start_time' }
+      )
+      const redirectTab = form.get('redirect_to') === 'class-types' ? 'class-types' : 'weekly-slots'
+      return Astro.redirect(`/admin?tab=${redirectTab}`)
+    }
+    if (action === 'delete_weekly_slot') {
+      await supabase.from('weekly_slots').delete().eq('id', parseInt(form.get('id') as string))
+      return Astro.redirect('/admin?tab=weekly-slots')
+    }
+
+    if (action === 'set_capacity') {
+      await supabase.from('tour_capacity').upsert(
+        {
+          class_type_id: form.get('class_type_id'),
+          capacity_date: form.get('capacity_date'),
+          max_capacity: parseInt(form.get('max_capacity') as string),
+        },
+        { onConflict: 'class_type_id,capacity_date' }
+      )
+      return Astro.redirect('/admin?tab=capacity')
+    }
+    if (action === 'delete_capacity') {
+      await supabase.from('tour_capacity').delete().eq('id', parseInt(form.get('id') as string))
+      return Astro.redirect('/admin?tab=capacity')
+    }
+
+    if (action === 'add_slot') {
+      const class_type_id = form.get('class_type_id') as string
+      await supabase.from('tour_slots').upsert(
+        {
+          class_type_id,
+          slot_date: form.get('slot_date'),
+          start_time: form.get('start_time'),
+          capacity: parseSlotCapacity(form.get('capacity'), 1),
+          booking_mode: parseBookingMode(form.get('booking_mode')),
+        },
+        { onConflict: 'class_type_id,slot_date,start_time' }
+      )
+      return Astro.redirect('/admin?tab=date-slots')
+    }
+    if (action === 'delete_slot') {
+      await supabase.from('tour_slots').delete().eq('id', parseInt(form.get('id') as string))
+      return Astro.redirect('/admin?tab=date-slots')
+    }
+  } catch (e) {
+    console.error('Admin action error:', e)
+  }
+}
+
+if (Astro.url.searchParams.get('logout') === '1') {
+  Astro.cookies.delete('pvss_admin', { path: '/' })
+  return Astro.redirect('/admin')
+}
+
+// ── Data fetching ──────────────────────────────────────────────────────────
+let bookings: any[] = []
+let classTypes: any[] = []
+let weeklySlots: any[] = []
+let capacities: any[] = []
+let dateSlots: any[] = []
+let stats     = { total: 0, confirmed: 0, pending: 0, cancelled: 0, revenue: 0 }
+let campStats = { total: 0, confirmed: 0, pending: 0, cancelled: 0, revenue: 0 }
+
+let campRooms: any[] = []
+let campSessions: any[] = []
+let campBookings: any[] = []
+let campSettings: any = { payment_mode: 'full', deposit_percentage: 30 }
+
+const activeTab = Astro.url.searchParams.get('tab') ?? 'bookings'
+const statusFilter = Astro.url.searchParams.get('status') ?? ''
+const dateFilter = Astro.url.searchParams.get('date') ?? ''
+
+if (isAuthenticated && DISABLED_CAMP_TABS.includes(activeTab)) {
+  return Astro.redirect('/admin?tab=class-types')
+}
+
+if (isAuthenticated && isSupabaseConfigured) {
+  const [
+    { data: allBookings },
+    { data: ctData },
+    { data: wsData },
+    { data: capData },
+    { data: dsData },
+    { data: statsData },
+  ] = await Promise.all([
+    supabase.from('bookings').select('*')
+      .order('booking_date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .order('created_at', { ascending: true })
+      .limit(200),
+    supabase.from('class_types').select('*').order('sort_order'),
+    supabase.from('weekly_slots').select('*, class_types(name)').order('class_type_id').order('day_of_week').order('start_time'),
+    supabase.from('tour_capacity').select('*, class_types(name)').order('capacity_date', { ascending: true }),
+    supabase.from('tour_slots').select('*, class_types(name)').order('slot_date', { ascending: true }).order('start_time'),
+    supabase.from('bookings').select('status, total_amount'),
+  ])
+
+  classTypes = ctData ?? []
+  weeklySlots = wsData ?? []
+  capacities = capData ?? []
+  dateSlots = dsData ?? []
+
+  for (const b of statsData ?? []) {
+    stats.total++
+    if (b.status === 'confirmed') { stats.confirmed++; stats.revenue += Number(b.total_amount) }
+    if (b.status === 'pending') stats.pending++
+    if (b.status === 'cancelled') stats.cancelled++
+  }
+
+  let q = (allBookings ?? [])
+  if (statusFilter) q = q.filter((b: any) => b.status === statusFilter)
+  if (dateFilter) q = q.filter((b: any) => b.booking_date === dateFilter)
+  bookings = q
+}
+
+const classTypesById: Record<string, any> = {}
+for (const ct of classTypes) classTypesById[ct.id] = ct
+
+const weeklySlotsByService: Record<string, Record<number, any[]>> = {}
+for (const s of weeklySlots) {
+  if (!weeklySlotsByService[s.class_type_id]) weeklySlotsByService[s.class_type_id] = {}
+  const byDay = weeklySlotsByService[s.class_type_id]
+  if (!byDay[s.day_of_week]) byDay[s.day_of_week] = []
+  byDay[s.day_of_week].push(s)
+}
+
+const sortedBookings = [...bookings].sort((a, b) => {
+  if (a.booking_date !== b.booking_date) return a.booking_date < b.booking_date ? -1 : 1
+  return (a.start_time || '').localeCompare(b.start_time || '')
+})
+
+type DayGroup = { date: string; items: any[] }
+const bookingsByDate: DayGroup[] = []
+for (const b of sortedBookings) {
+  const last = bookingsByDate[bookingsByDate.length - 1]
+  if (last && last.date === b.booking_date) last.items.push(b)
+  else bookingsByDate.push({ date: b.booking_date, items: [b] })
+}
+
+const DAY_COLORS = [
+  { border: '#00BCD4', bg: '#E0F7FA', text: '#006064', chip: '#B2EBF2' },
+  { border: '#3B82F6', bg: '#EFF6FF', text: '#1E40AF', chip: '#BFDBFE' },
+  { border: '#A855F7', bg: '#F3E8FF', text: '#6B21A8', chip: '#E9D5FF' },
+  { border: '#F97316', bg: '#FFF7ED', text: '#9A3412', chip: '#FED7AA' },
+  { border: '#22C55E', bg: '#F0FDF4', text: '#14532D', chip: '#BBF7D0' },
+  { border: '#F43F5E', bg: '#FFF1F2', text: '#9F1239', chip: '#FECDD3' },
+  { border: '#6366F1', bg: '#EEF2FF', text: '#3730A3', chip: '#C7D2FE' },
+  { border: '#EAB308', bg: '#FEFCE8', text: '#713F12', chip: '#FEF08A' },
+]
+
+function getTimeBadgeColors(timeStr: string): [string, string] {
+  const hour = parseInt((timeStr || '00').split(':')[0])
+  if (hour < 12) return ['#E0F7FA', '#006064']
+  if (hour < 17) return ['#FFFBEB', '#92400E']
+  return ['#F0FDF4', '#14532D']
+}
+
+function groupByCustomer(items: any[]): Array<{ email: string; name: string; bookings: any[] }> {
+  const map: Record<string, { email: string; name: string; bookings: any[] }> = {}
+  const order: string[] = []
+  for (const b of items) {
+    const key = (b.customer_email || b.customer_name || '').toLowerCase().trim()
+    if (!map[key]) {
+      map[key] = { email: b.customer_email, name: b.customer_name, bookings: [] }
+      order.push(key)
+    }
+    map[key].bookings.push(b)
+  }
+  return order.map(k => map[k])
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
+
+function avatarColor(name: string): [string, string] {
+  const colors: [string, string][] = [
+    ['#DBEAFE', '#1E40AF'], ['#D1FAE5', '#065F46'], ['#EDE9FE', '#5B21B6'],
+    ['#FEF3C7', '#92400E'], ['#FCE7F3', '#9D174D'], ['#E0F7FA', '#006064'],
+    ['#FFE4E6', '#9F1239'], ['#FEF9C3', '#713F12'],
+  ]
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h)
+  return colors[Math.abs(h) % colors.length]
+}
+
+const TABS_LESSONS = [
+  { id: 'bookings',      label: 'Bookings',          icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+  { id: 'class-types',   label: 'Prices & Services', icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' },
+  { id: 'weekly-slots',  label: 'Weekly Schedule',   icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { id: 'capacity',      label: 'Capacity',           icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4' },
+  { id: 'date-slots',    label: 'Date Overrides',    icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
+]
+
+const TABS_CAMP = [
+  { id: 'camp-bookings', label: 'Camp Bookings',     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+  { id: 'camp-rooms',    label: 'Camp Rooms',        icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+  { id: 'camp-sessions', label: 'Camp Sessions',     icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { id: 'camp-settings', label: 'Camp Settings',     icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+]
+
+const TABS_SETTINGS = [
+  { id: 'payment-settings', label: 'Payment Settings', icon: 'M3 10h18M7 15h1m4 0h1m4 0h1M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z' },
+  { id: 'booking-settings', label: 'Booking Settings', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+]
+
+const TABS = [...TABS_LESSONS, ...TABS_SETTINGS]
+
+const currentTab = TABS.find(t => t.id === activeTab || (activeTab === '' && t.id === 'bookings'))
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Outsider Surf Academy</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style is:global>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif; }
+
+    /* ── Sidebar ── */
+    .adm-sidebar {
+      position: fixed; top: 0; left: 0; width: 232px; height: 100vh;
+      background: #0C2128; display: flex; flex-direction: column;
+      padding: 20px 14px; z-index: 100; overflow-y: auto;
+    }
+    .adm-logo { display: flex; align-items: center; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 20px; }
+    .adm-logo-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: linear-gradient(135deg, #00BCD4 0%, #006064 100%); box-shadow: 0 4px 14px rgba(0,188,212,0.32); }
+    .adm-logo-title { font-weight: 800; font-size: 13.5px; color: white; line-height: 1.2; letter-spacing: -0.01em; }
+    .adm-logo-sub { font-size: 10.5px; color: rgba(255,255,255,0.32); font-weight: 500; }
+    .adm-nav-label { font-size: 9.5px; font-weight: 800; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.14em; padding: 0 10px; margin-bottom: 6px; }
+    .adm-nav-link { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.48); text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
+    .adm-nav-link:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.82); }
+    .adm-nav-link.adm-active { background: rgba(0,188,212,0.13); color: #4DD0E1; font-weight: 600; }
+    .adm-nav-link svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.65; }
+    .adm-nav-link.adm-active svg { opacity: 1; }
+    .adm-nav-badge { margin-left: auto; background: #FBBF24; color: #78350F; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; line-height: 1.4; }
+    .adm-sidebar-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+
+    /* ── Main layout ── */
+    .adm-main { margin-left: 232px; min-height: 100vh; background: #F1F5F9; }
+    .adm-topbar { background: white; border-bottom: 1px solid #E2E8F0; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .adm-content { padding: 28px; max-width: 1360px; }
+
+    /* ── Stat cards ── */
+    .adm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .adm-stat { background: white; border-radius: 14px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: flex-start; gap: 14px; }
+    .adm-stat-icon { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .adm-stat-icon svg { width: 22px; height: 22px; }
+    .adm-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #94A3B8; margin-bottom: 4px; }
+    .adm-stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: #0F172A; line-height: 1; }
+
+    /* ── Generic card ── */
+    .adm-card { background: white; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
+    .adm-card-p { padding: 22px; }
+
+    /* ── Table ── */
+    .adm-tbl { width: 100%; border-collapse: collapse; }
+    .adm-tbl thead th { padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94A3B8; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+    .adm-tbl tbody tr { border-bottom: 1px solid #F8FAFC; transition: background 0.1s; }
+    .adm-tbl tbody tr:last-child { border-bottom: none; }
+    .adm-tbl tbody tr:hover { background: #FAFBFD; }
+    .adm-tbl tbody td { padding: 12px 16px; font-size: 13px; color: #334155; vertical-align: middle; }
+
+    /* ── Status pills ── */
+    .adm-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .adm-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .adm-pill-confirmed { background: #DCFCE7; color: #15803D; }
+    .adm-pill-confirmed::before { background: #22C55E; }
+    .adm-pill-pending { background: #FEF9C3; color: #A16207; }
+    .adm-pill-pending::before { background: #EAB308; }
+    .adm-pill-cancelled { background: #FEE2E2; color: #DC2626; }
+    .adm-pill-cancelled::before { background: #EF4444; }
+
+    /* ── Avatar ── */
+    .adm-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; flex-shrink: 0; }
+
+    /* ── Form inputs ── */
+    .adm-label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #64748B; margin-bottom: 5px; }
+    .adm-input { border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 8px 12px; font-size: 13px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; width: 100%; color: #1E293B; background: white; font-family: inherit; }
+    .adm-input:focus { border-color: #00BCD4; box-shadow: 0 0 0 3px rgba(0,188,212,0.09); }
+    select.adm-input { cursor: pointer; }
+    textarea.adm-input { resize: vertical; min-height: 68px; }
+
+    /* ── Buttons ── */
+    .adm-btn { padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: all 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+    .adm-btn-teal { background: linear-gradient(135deg, #00BCD4, #0097A7); color: white; box-shadow: 0 2px 8px rgba(0,188,212,0.22); }
+    .adm-btn-teal:hover { background: linear-gradient(135deg, #26C6DA, #00BCD4); box-shadow: 0 4px 14px rgba(0,188,212,0.35); transform: translateY(-1px); }
+    .adm-btn-light { background: #F8FAFC; color: #0F766E; border: 1px solid #CCFBF1; box-shadow: none; }
+    .adm-btn-light:hover { background: #ECFEFF; border-color: #67E8F9; }
+    .adm-btn-confirm { background: #DCFCE7; color: #15803D; padding: 5px 11px; font-size: 12px; }
+    .adm-btn-confirm:hover { background: #BBF7D0; }
+    .adm-btn-cancel { background: #FEE2E2; color: #DC2626; padding: 5px 11px; font-size: 12px; }
+    .adm-btn-cancel:hover { background: #FECACA; }
+    .adm-btn-ghost { background: none; border: none; padding: 5px 8px; font-size: 12.5px; font-weight: 600; color: #94A3B8; cursor: pointer; border-radius: 7px; font-family: inherit; transition: all 0.1s; }
+    .adm-btn-ghost:hover { color: #EF4444; background: #FEF2F2; }
+    .adm-btn-link { background: none; border: none; padding: 6px 0; font-size: 13px; color: #94A3B8; cursor: pointer; font-family: inherit; transition: color 0.15s; text-decoration: none; display: inline-block; }
+    .adm-btn-link:hover { color: #64748B; }
+
+    /* ── Filter bar ── */
+    .adm-filter { background: white; border-radius: 14px; padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+
+    /* ── Accordion (class types) ── */
+    details.adm-accordion summary { list-style: none; cursor: pointer; }
+    details.adm-accordion summary::-webkit-details-marker { display: none; }
+    details.adm-accordion[open] .adm-chevron { transform: rotate(180deg); }
+    .adm-chevron { transition: transform 0.2s ease; flex-shrink: 0; }
+    .adm-service-summary { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; transition: background 0.1s; }
+    .adm-service-summary:hover { background: #FAFBFD; }
+    details.adm-accordion[open] .adm-service-summary { background: #FAFBFD; }
+    .adm-service-body { padding: 20px; border-top: 1px solid #F1F5F9; }
+
+    /* ── Day grid (weekly slots) ── */
+    .adm-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 14px; }
+    .adm-day-card { border-radius: 12px; padding: 11px; border: 1.5px solid; }
+    .adm-day-on  { border-color: #80DEEA; background: #E0F7FA; }
+    .adm-day-off { border-color: #E2E8F0; background: #F8FAFC; opacity: 0.55; }
+    .adm-day-name { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #475569; margin-bottom: 7px; }
+    .adm-day-on .adm-day-name { color: #0E7490; }
+
+    /* ── Empty states ── */
+    .adm-empty { display: flex; flex-direction: column; align-items: center; padding: 56px 24px; text-align: center; }
+    .adm-empty-icon { width: 52px; height: 52px; background: #F1F5F9; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+    .adm-empty-title { font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 4px; }
+    .adm-empty-sub { font-size: 13px; color: #94A3B8; margin: 0; }
+
+    /* ── Login ── */
+    .adm-login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(150deg, #0C2128 0%, #00363F 50%, #0C2128 100%); }
+    .adm-login-panel { width: 100%; max-width: 375px; }
+    .adm-login-brand { text-align: center; margin-bottom: 30px; }
+    .adm-login-icon { width: 62px; height: 62px; margin: 0 auto 14px; border-radius: 18px; background: linear-gradient(135deg, #00BCD4, #006064); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 28px rgba(0,188,212,0.38); }
+    .adm-login-icon svg { width: 30px; height: 30px; color: white; }
+    .adm-login-title { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.02em; margin: 0; }
+    .adm-login-subtitle { font-size: 13px; color: rgba(255,255,255,0.38); margin: 5px 0 0; }
+    .adm-login-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; }
+    .adm-login-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.42); margin-bottom: 8px; }
+    .adm-login-input-wrap { position: relative; }
+    .adm-login-icon-field { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: rgba(255,255,255,0.28); pointer-events: none; }
+    .adm-login-input { width: 100%; background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px 14px 12px 43px; color: white; font-size: 14px; outline: none; transition: border-color 0.15s; font-family: inherit; }
+    .adm-login-input::placeholder { color: rgba(255,255,255,0.24); }
+    .adm-login-input:focus { border-color: #26C6DA; box-shadow: 0 0 0 3px rgba(0,188,212,0.14); }
+    .adm-login-btn { width: 100%; background: linear-gradient(135deg, #00BCD4, #0097A7); color: white; font-weight: 800; font-size: 14.5px; padding: 13px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(0,188,212,0.35); transition: all 0.15s; margin-top: 20px; font-family: inherit; }
+    .adm-login-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,188,212,0.45); }
+    .adm-login-footer { text-align: center; margin-top: 18px; font-size: 12px; color: rgba(255,255,255,0.2); }
+
+    /* ── Animations ── */
+    @keyframes adm-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .adm-tab { animation: adm-fade-up 0.2s ease; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1100px) { .adm-stats { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px)  { .adm-day-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 720px)  { .adm-day-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 680px)  {
+      .adm-sidebar { width: 64px; }
+      .adm-logo-title, .adm-logo-sub, .adm-nav-label, .adm-nav-link span { display: none; }
+      .adm-main { margin-left: 64px; }
+      .adm-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+    /* ── Booking detail dialog ── */
+    .adm-dialog {
+      border: none; border-radius: 20px; padding: 0;
+      max-width: 460px; width: calc(100vw - 32px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+      overflow: hidden; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); margin: 0;
+    }
+    .adm-dialog::backdrop {
+      background: rgba(15,23,42,0.52);
+      backdrop-filter: blur(4px);
+    }
+    @keyframes adm-dialog-in {
+      from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)) scale(0.97); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .adm-dialog[open] { animation: adm-dialog-in 0.2s ease; }
+    .adm-dialog-hd {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 22px 24px 16px;
+    }
+    .adm-dialog-close {
+      width: 30px; height: 30px; border-radius: 8px; border: none;
+      background: #F1F5F9; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: background 0.1s; flex-shrink: 0; margin-top: 2px;
+    }
+    .adm-dialog-close:hover { background: #E2E8F0; }
+    .adm-dialog-close svg { width: 15px; height: 15px; color: #64748B; }
+    .adm-dialog-sep { height: 1px; background: #F1F5F9; }
+    .adm-dialog-sec { padding: 16px 24px; }
+    .adm-dialog-sec-label {
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.13em; color: #94A3B8; margin-bottom: 10px;
+    }
+    .adm-dialog-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #475569; margin-bottom: 5px;
+    }
+    .adm-dialog-row svg { width: 15px; height: 15px; color: #CBD5E1; flex-shrink: 0; }
+    .adm-dialog-actions { padding: 14px 24px 22px; display: flex; gap: 8px; }
+    .adm-btn-view {
+      background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 8px;
+      padding: 5px 10px; cursor: pointer; display: inline-flex; align-items: center;
+      gap: 5px; font-size: 12px; font-weight: 600; color: #475569;
+      transition: all 0.1s; font-family: inherit; white-space: nowrap;
+    }
+    .adm-btn-view:hover { background: #EFF6FF; border-color: #93C5FD; color: #1D4ED8; }
+    .adm-btn-view svg { width: 13px; height: 13px; }
+
+    .adm-help { font-size: 11.5px; color: #94A3B8; margin-top: 4px; line-height: 1.45; }
+    .adm-tier-editor {
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 14px;
+      background: #FBFEFF;
+    }
+    .adm-tier-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .adm-tier-grid {
+      display: grid;
+      grid-template-columns: 78px 78px minmax(120px, 1fr) 118px 132px 32px;
+      gap: 8px;
+      align-items: center;
+    }
+    .adm-tier-grid-head {
+      color: #64748B;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .adm-tier-row { margin-bottom: 8px; }
+    .adm-tier-remove {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 8px;
+      background: #FEF2F2;
+      color: #EF4444;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      font-family: inherit;
+    }
+    .adm-tier-remove:hover { background: #FEE2E2; color: #B91C1C; }
+    .adm-tier-fallback { display: none; }
+  </style>
+</head>
+<body>
+
+{!isAuthenticated ? (
+  <div class="adm-login-wrap">
+    <div class="adm-login-panel">
+      <div class="adm-login-brand">
+        <div class="adm-login-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <p class="adm-login-title">Outsider Admin</p>
+        <p class="adm-login-subtitle">Surf School Management</p>
+      </div>
+
+      <div class="adm-login-card">
+        <form method="POST">
+          <input type="hidden" name="action" value="login" />
+          <label class="adm-login-label">Admin Password</label>
+          <div class="adm-login-input-wrap">
+            <svg class="adm-login-icon-field" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <input type="password" name="password" class="adm-login-input" placeholder="Enter your password" required autofocus />
+          </div>
+          <button type="submit" class="adm-login-btn">Sign In →</button>
+        </form>
+      </div>
+      <p class="adm-login-footer">Protected area · Unauthorized access is prohibited</p>
+    </div>
+  </div>
+) : (
+  <div style="display:flex">
+
+    <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════ -->
+    <aside class="adm-sidebar">
+      <div class="adm-logo">
+        <div class="adm-logo-icon">
+          <svg style="width:18px;height:18px;color:white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="adm-logo-title">Outsider</div>
+          <div class="adm-logo-sub">Admin Panel</div>
+        </div>
+      </div>
+
+      <nav style="flex:1">
+        <div class="adm-nav-label">Surf Lessons & Packages</div>
+        {TABS_LESSONS.map(t => {
+          const isActive = activeTab === t.id || (activeTab === '' && t.id === 'bookings')
+          return (
+            <a href={`/admin?tab=${t.id}`} class={`adm-nav-link ${isActive ? 'adm-active' : ''}`}>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d={t.icon} />
+              </svg>
+              <span>{t.label}</span>
+              {t.id === 'bookings' && stats.pending > 0 && (
+                <span class="adm-nav-badge">{stats.pending}</span>
+              )}
+            </a>
+          )
+        })}
+
+        <div class="adm-nav-label" style="margin-top:18px">Settings</div>
+        {TABS_SETTINGS.map(t => {
+          const isActive = activeTab === t.id
+          return (
+            <a href={`/admin?tab=${t.id}`} class={`adm-nav-link ${isActive ? 'adm-active' : ''}`}>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d={t.icon} />
+              </svg>
+              <span>{t.label}</span>
+            </a>
+          )
+        })}
+      </nav>
+
+      <div class="adm-sidebar-footer">
+        <a href="/" target="_blank" rel="noopener" class="adm-nav-link" style="color:rgba(255,255,255,0.5);margin-bottom:4px">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+          <span>View Website</span>
+        </a>
+        <a href="/admin?logout=1" class="adm-nav-link" style="color:rgba(255,255,255,0.32)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span>Log out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ══ MAIN ═════════════════════════════════════════════════════════════ -->
+    <div class="adm-main">
+
+      <!-- Top bar -->
+      <header class="adm-topbar">
+        <div>
+          <div style="font-size:17px;font-weight:800;color:#0F172A;letter-spacing:-0.02em">{currentTab?.label ?? 'Bookings'}</div>
+          <div style="font-size:12px;color:#94A3B8;font-weight:500;margin-top:1px">Outsider Surf Academy · Tamarindo</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          {stats.pending > 0 && (
+            <a href="/admin?tab=bookings&status=pending"
+              style="background:#FEF9C3;border:1px solid #FDE047;border-radius:10px;padding:6px 14px;text-decoration:none;display:inline-block">
+              <span style="font-size:12px;font-weight:700;color:#A16207">⚠ {stats.pending} pending {stats.pending === 1 ? 'booking' : 'bookings'}</span>
+            </a>
+          )}
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00BCD4,#006064);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg style="width:16px;height:16px;color:white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="adm-content">
+        {!isSupabaseConfigured && (
+          <div class="adm-card" style="border:1px solid #FDE68A;background:#FFFBEB;margin-bottom:18px">
+            <div class="adm-card-p">
+              <div style="font-size:15px;font-weight:800;color:#92400E;margin-bottom:6px">Supabase is not configured</div>
+              <p style="font-size:13px;color:#92400E;line-height:1.55;margin:0">
+                Add {missingSupabaseEnv.join(' and ')} to your local <code>.env</code> file, then restart the dev server.
+                You can use <code>.env.example</code> as the template.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <!-- STATS ROW — condicional por sección -->
+        {['camp-bookings','camp-rooms','camp-sessions','camp-settings'].includes(activeTab) ? (
+          <!-- Camp stats -->
+          <div class="adm-stats">
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#EFF6FF">
+                <svg style="color:#2563EB" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Total Camp Bookings</div>
+                <div class="adm-stat-value">{campStats.total}</div>
+              </div>
+            </div>
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#F0FDF4">
+                <svg style="color:#16A34A" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Confirmed</div>
+                <div class="adm-stat-value" style="color:#16A34A">{campStats.confirmed}</div>
+              </div>
+            </div>
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#FEFCE8">
+                <svg style="color:#CA8A04" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Pending</div>
+                <div class="adm-stat-value" style="color:#CA8A04">{campStats.pending}</div>
+              </div>
+            </div>
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#E0F7FA">
+                <svg style="color:#0097A7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Camp Revenue</div>
+                <div class="adm-stat-value" style="color:#0097A7">${campStats.revenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <!-- Surf Lessons stats -->
+          <div class="adm-stats">
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#EFF6FF">
+                <svg style="color:#2563EB" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Total Bookings</div>
+                <div class="adm-stat-value">{stats.total}</div>
+              </div>
+            </div>
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#F0FDF4">
+                <svg style="color:#16A34A" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Confirmed</div>
+                <div class="adm-stat-value" style="color:#16A34A">{stats.confirmed}</div>
+              </div>
+            </div>
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#FEFCE8">
+                <svg style="color:#CA8A04" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Pending</div>
+                <div class="adm-stat-value" style="color:#CA8A04">{stats.pending}</div>
+              </div>
+            </div>
+            <div class="adm-stat">
+              <div class="adm-stat-icon" style="background:#E0F7FA">
+                <svg style="color:#0097A7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="adm-stat-label">Revenue</div>
+                <div class="adm-stat-value" style="color:#0097A7">${stats.revenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <!-- ══ TAB: BOOKINGS ════════════════════════════════════════════════ -->
+        {(activeTab === 'bookings' || activeTab === '') && (
+          <div class="adm-tab">
+
+            <!-- Filter bar -->
+            <form method="GET" class="adm-filter">
+              <input type="hidden" name="tab" value="bookings" />
+              <div>
+                <label class="adm-label">Status</label>
+                <select name="status" class="adm-input" style="width:148px">
+                  <option value="">All statuses</option>
+                  <option value="confirmed" selected={statusFilter === 'confirmed'}>Confirmed</option>
+                  <option value="pending" selected={statusFilter === 'pending'}>Pending</option>
+                  <option value="cancelled" selected={statusFilter === 'cancelled'}>Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label class="adm-label">Date</label>
+                <input type="date" name="date" value={dateFilter} class="adm-input" style="width:162px" />
+              </div>
+              <button type="submit" class="adm-btn adm-btn-teal">
+                <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                </svg>
+                Filter
+              </button>
+              {(statusFilter || dateFilter) && (
+                <a href="/admin?tab=bookings" class="adm-btn-link">Clear filters</a>
+              )}
+              <div style="margin-left:auto;font-size:12.5px;color:#94A3B8;font-weight:500;align-self:center">
+                {bookings.length} result{bookings.length !== 1 ? 's' : ''} · {bookingsByDate.length} day{bookingsByDate.length !== 1 ? 's' : ''}
+              </div>
+            </form>
+
+            <!-- Empty state -->
+            {bookings.length === 0 && (
+              <div class="adm-card">
+                <div class="adm-empty">
+                  <div class="adm-empty-icon">
+                    <svg style="width:24px;height:24px;color:#94A3B8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                  </div>
+                  <p class="adm-empty-title">No bookings found</p>
+                  <p class="adm-empty-sub">{statusFilter || dateFilter ? 'Try clearing your filters to see all bookings' : 'New bookings will appear here'}</p>
+                </div>
+              </div>
+            )}
+
+            <!-- Grouped day cards -->
+            {bookingsByDate.map((group, groupIdx) => {
+              const color = DAY_COLORS[groupIdx % DAY_COLORS.length]
+              const dateObj = new Date(group.date + 'T12:00:00')
+              const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'long' })
+              const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+              const confirmedRevenue = group.items.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.total_amount), 0)
+              const confirmedCount = group.items.filter(b => b.status === 'confirmed').length
+              const pendingCount  = group.items.filter(b => b.status === 'pending').length
+              return (
+                <div style={`border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:5px solid ${color.border};background:white;margin-bottom:14px`}>
+
+                  <!-- Day header -->
+                  <div style={`background:${color.bg};padding:13px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px`}>
+                    <div style="display:flex;align-items:center;gap:12px">
+                      <div style={`width:11px;height:11px;border-radius:50%;background:${color.border};flex-shrink:0`}></div>
+                      <div>
+                        <span style={`font-weight:800;font-size:15px;color:${color.text}`}>{dayLabel}</span>
+                        <span style={`font-size:13px;color:${color.text};opacity:0.65;margin-left:8px`}>{dateLabel}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                      <span style={`background:${color.border};color:white;font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px`}>
+                        {group.items.length} {group.items.length === 1 ? 'booking' : 'bookings'}
+                      </span>
+                      {confirmedCount > 0 && (
+                        <span style={`background:${color.chip};color:${color.text};font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px`}>
+                          ✓ {confirmedCount} confirmed
+                        </span>
+                      )}
+                      {pendingCount > 0 && (
+                        <span style="background:#FEF9C3;color:#A16207;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px">
+                          ⚠ {pendingCount} pending
+                        </span>
+                      )}
+                      {confirmedRevenue > 0 && (
+                        <span style={`font-size:13px;font-weight:800;color:${color.text}`}>{formatCurrency(confirmedRevenue)}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <!-- Bookings table for this day -->
+                  <div style="overflow-x:auto">
+                    <table class="adm-tbl">
+                      <thead>
+                        <tr>
+                          <th>Ref</th>
+                          <th>Service</th>
+                          <th>Time</th>
+                          <th>Customer</th>
+                          <th style="text-align:center">Guests</th>
+                          <th>Total</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupByCustomer(group.items).map((cg) => {
+                          if (cg.bookings.length === 1) {
+                            // ── Booking individual ──────────────────────────
+                            const b = cg.bookings[0]
+                            const ctName = classTypesById[b.class_type_id]?.name ?? b.class_type_id
+                            const ref = b.id.slice(-8).toUpperCase()
+                            const initials = getInitials(b.customer_name)
+                            const [avBg, avFg] = avatarColor(b.customer_name)
+                            const [timeBg, timeFg] = getTimeBadgeColors(b.start_time)
+                            return (
+                              <tr>
+                                <td>
+                                  <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#64748B;background:#F1F5F9;padding:3px 8px;border-radius:6px">#{ref}</span>
+                                </td>
+                                <td>
+                                  <span style="font-weight:600;color:#0F172A">{ctName}</span>
+                                </td>
+                                <td>
+                                  <span style={`background:${timeBg};color:${timeFg};font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:8px;white-space:nowrap;display:inline-block`}>
+                                    {formatTime(b.start_time)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div style="display:flex;align-items:center;gap:10px">
+                                    <div class="adm-avatar" style={`background:${avBg};color:${avFg}`}>{initials}</div>
+                                    <div>
+                                      <div style="font-weight:600;color:#0F172A">{b.customer_name}</div>
+                                      <div style="font-size:11.5px;color:#94A3B8">{b.customer_email}</div>
+                                      {b.customer_phone && <div style="font-size:11px;color:#CBD5E1">{b.customer_phone}</div>}
+                                      {b.customer_country && <div style="font-size:11px;color:#CBD5E1">{b.customer_country}</div>}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style="text-align:center">
+                                  <span style="font-weight:800;color:#334155;font-size:15px">{b.participants}</span>
+                                </td>
+                                <td>
+                                  <span style="font-weight:800;color:#0097A7;font-size:14px">{formatCurrency(Number(b.total_amount))}</span>
+                                </td>
+                                <td>
+                                  {b.status === 'pending' && b.payment_method === 'on-site' ? (
+                                    <span class="adm-pill" style="background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">⚠ Awaiting Payment</span>
+                                  ) : (
+                                    <span class={`adm-pill adm-pill-${b.status}`}>{b.status}</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div style="display:flex;align-items:center;gap:6px">
+                                    <button type="button" class="adm-btn-view" onclick={`document.getElementById('bd-${b.id}').showModal()`}>
+                                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                      View
+                                    </button>
+                                    <form method="POST" style="display:flex;gap:6px">
+                                      <input type="hidden" name="action" value="update" />
+                                      <input type="hidden" name="id" value={b.id} />
+                                      {b.status !== 'confirmed' && (
+                                        <button type="submit" name="status" value="confirmed" class="adm-btn adm-btn-confirm">
+                                          {b.status === 'pending' && b.payment_method === 'on-site' ? '💵 Mark as Paid' : '✓ Confirm'}
+                                        </button>
+                                      )}
+                                      {b.status !== 'cancelled' && (
+                                        <button type="submit" name="status" value="cancelled" class="adm-btn adm-btn-cancel">✗ Cancel</button>
+                                      )}
+                                    </form>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          } else {
+                            // ── Familia / múltiples servicios ───────────────
+                            const groupTotal = cg.bookings.reduce((s, b) => s + Number(b.total_amount), 0)
+                            const initials = getInitials(cg.name)
+                            const [avBg, avFg] = avatarColor(cg.name)
+                            return (
+                              <>
+                                {/* Header de familia */}
+                                <tr style={`background:${color.bg};border-top:2px solid ${color.border}40`}>
+                                  <td colSpan={8} style="padding:10px 18px">
+                                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                                      <div class="adm-avatar" style={`background:${avBg};color:${avFg};width:30px;height:30px;font-size:11px;flex-shrink:0`}>{initials}</div>
+                                      <div>
+                                        <span style="font-weight:700;color:#0F172A;font-size:13.5px">{cg.name}</span>
+                                        <span style="font-size:12px;color:#94A3B8;margin-left:8px">{cg.email}</span>
+                                      </div>
+                                      <span style={`background:${color.border};color:white;font-size:10.5px;font-weight:700;padding:2px 10px;border-radius:999px`}>
+                                        {cg.bookings.length} services
+                                      </span>
+                                      <span style="margin-left:auto;font-size:13px;font-weight:800;color:#0097A7">{formatCurrency(groupTotal)}</span>
+                                    </div>
+                                  </td>
+                                </tr>
+                                {/* Filas de cada servicio */}
+                                {cg.bookings.map((b) => {
+                                  const ctName = classTypesById[b.class_type_id]?.name ?? b.class_type_id
+                                  const ref = b.id.slice(-8).toUpperCase()
+                                  const [timeBg, timeFg] = getTimeBadgeColors(b.start_time)
+                                  return (
+                                    <tr style={`background:${color.bg}44`}>
+                                      <td style={`box-shadow:inset 3px 0 0 ${color.border}`}>
+                                        <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#64748B;background:#F1F5F9;padding:3px 8px;border-radius:6px">#{ref}</span>
+                                      </td>
+                                      <td>
+                                        <span style="font-weight:600;color:#0F172A">{ctName}</span>
+                                      </td>
+                                      <td>
+                                        <span style={`background:${timeBg};color:${timeFg};font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:8px;white-space:nowrap;display:inline-block`}>
+                                          {formatTime(b.start_time)}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <span style={`font-size:12px;color:${color.border};font-weight:600`}>↳ family group</span>
+                                      </td>
+                                      <td style="text-align:center">
+                                        <span style="font-weight:800;color:#334155;font-size:15px">{b.participants}</span>
+                                      </td>
+                                      <td>
+                                        <span style="font-weight:800;color:#0097A7;font-size:14px">{formatCurrency(Number(b.total_amount))}</span>
+                                      </td>
+                                      <td>
+                                        {b.status === 'pending' && b.payment_method === 'on-site' ? (
+                                          <span class="adm-pill" style="background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">⚠ Awaiting Payment</span>
+                                        ) : (
+                                          <span class={`adm-pill adm-pill-${b.status}`}>{b.status}</span>
+                                        )}
+                                      </td>
+                                      <td>
+                                        <div style="display:flex;align-items:center;gap:6px">
+                                          <button type="button" class="adm-btn-view" onclick={`document.getElementById('bd-${b.id}').showModal()`}>
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            View
+                                          </button>
+                                          <form method="POST" style="display:flex;gap:6px">
+                                            <input type="hidden" name="action" value="update" />
+                                            <input type="hidden" name="id" value={b.id} />
+                                            {b.status !== 'confirmed' && (
+                                              <button type="submit" name="status" value="confirmed" class="adm-btn adm-btn-confirm">
+                                                {b.status === 'pending' && b.payment_method === 'on-site' ? '💵 Mark as Paid' : '✓ Confirm'}
+                                              </button>
+                                            )}
+                                            {b.status !== 'cancelled' && (
+                                              <button type="submit" name="status" value="cancelled" class="adm-btn adm-btn-cancel">✗ Cancel</button>
+                                            )}
+                                          </form>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                                {/* Separador después del grupo familiar */}
+                                <tr><td colSpan={8} style="padding:0;height:2px;background:#E2E8F0"></td></tr>
+                              </>
+                            )
+                          }
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            })}
+
+          {/* Dialogs de detalle — uno por booking, pre-renderizados */}
+          {sortedBookings.map(b => {
+            const ct = classTypesById[b.class_type_id]
+            const ctName = ct?.name ?? b.class_type_id
+            const initials = getInitials(b.customer_name)
+            const [avBg, avFg] = avatarColor(b.customer_name)
+            const bDateFull = new Date(b.booking_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+            const bookedOn = b.created_at ? new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+            const pricePerPerson = ct?.price_per_person ?? (Number(b.total_amount) / Math.max(b.participants, 1))
+            return (
+              <dialog id={`bd-${b.id}`} class="adm-dialog">
+
+                {/* Header */}
+                <div class="adm-dialog-hd">
+                  <div>
+                    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.13em;color:#94A3B8;margin-bottom:6px">Booking Detail</div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <span style="font-family:ui-monospace,monospace;font-size:18px;font-weight:800;color:#0F172A;letter-spacing:-0.01em">#{b.id.slice(-8).toUpperCase()}</span>
+                      {b.status === 'pending' && b.payment_method === 'on-site' ? (
+                        <span class="adm-pill" style="background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">⚠ Awaiting Payment</span>
+                      ) : (
+                        <span class={`adm-pill adm-pill-${b.status}`}>{b.status}</span>
+                      )}
+                    </div>
+                  </div>
+                  <button type="button" class="adm-dialog-close" onclick="this.closest('dialog').close()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+
+                <div class="adm-dialog-sep"></div>
+
+                {/* Servicio */}
+                <div class="adm-dialog-sec">
+                  <div class="adm-dialog-sec-label">Service</div>
+                  <div style="font-weight:700;color:#0F172A;font-size:16px;margin-bottom:12px">{ctName}</div>
+                  <div class="adm-dialog-row">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    {bDateFull}
+                  </div>
+                  <div class="adm-dialog-row">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {formatTime(b.start_time)}{ct?.duration_minutes ? ` · ${ct.duration_minutes} min` : ''}
+                  </div>
+                  <div class="adm-dialog-row">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    {b.participants} {b.participants === 1 ? 'guest' : 'guests'}
+                  </div>
+                </div>
+
+                <div class="adm-dialog-sep"></div>
+
+                {/* Cliente */}
+                <div class="adm-dialog-sec">
+                  <div class="adm-dialog-sec-label">Customer</div>
+                  <div style="display:flex;align-items:flex-start;gap:12px">
+                    <div class="adm-avatar" style={`background:${avBg};color:${avFg};width:42px;height:42px;font-size:14px;flex-shrink:0`}>{initials}</div>
+                    <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                      <span style="font-weight:700;color:#0F172A;font-size:15px">{b.customer_name}</span>
+                      <a href={`mailto:${b.customer_email}`} style="font-size:13px;color:#2563EB;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{b.customer_email}</a>
+                      {b.customer_phone && <span style="font-size:13px;color:#475569">{b.customer_phone}</span>}
+                      {b.customer_country && <span style="font-size:13px;color:#94A3B8">{b.customer_country}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="adm-dialog-sep"></div>
+
+                {/* Pago */}
+                <div class="adm-dialog-sec">
+                  <div class="adm-dialog-sec-label">Payment</div>
+                  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+                    <div>
+                      <div style="font-size:12.5px;color:#94A3B8;margin-bottom:3px">{b.participants} × {formatCurrency(pricePerPerson)}/person</div>
+                      <div style="font-size:28px;font-weight:800;color:#0097A7;letter-spacing:-0.04em;line-height:1">{formatCurrency(Number(b.total_amount))}</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-size:10.5px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.09em;font-weight:700">Booked on</div>
+                      <div style="font-size:13px;font-weight:600;color:#475569;margin-top:3px">{bookedOn}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acciones */}
+                {(b.status !== 'confirmed' || b.status !== 'cancelled') && (
+                  <div class="adm-dialog-actions">
+                    {b.status === 'pending' && b.payment_method === 'on-site' && (
+                      <div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#92400E;font-weight:500">
+                        💵 On-site payment — customer pays in person at the beach
+                      </div>
+                    )}
+                    <form method="POST" style="display:contents">
+                      <input type="hidden" name="action" value="update" />
+                      <input type="hidden" name="id" value={b.id} />
+                      {b.status !== 'confirmed' && (
+                        <button type="submit" name="status" value="confirmed" class="adm-btn adm-btn-teal" style="flex:1;justify-content:center">
+                          {b.status === 'pending' && b.payment_method === 'on-site' ? '💵 Mark as Paid' : '✓ Confirm Booking'}
+                        </button>
+                      )}
+                      {b.status !== 'cancelled' && (
+                        <button type="submit" name="status" value="cancelled" class="adm-btn adm-btn-cancel" style="flex:1;justify-content:center">
+                          ✗ Cancel
+                        </button>
+                      )}
+                    </form>
+                  </div>
+                )}
+
+              </dialog>
+            )
+          })}
+
+          </div>
+        )}
+
+        <!-- ══ TAB: CLASS TYPES ══════════════════════════════════════════════ -->
+        {activeTab === 'class-types' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:10px">
+            <p style="font-size:13px;color:#94A3B8;margin:0 0 6px">Changes take effect immediately in the booking wizard.</p>
+            <details class="adm-card adm-accordion">
+              <summary class="adm-service-summary">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#0097A7"></div>
+                  <div>
+                    <div style="font-weight:700;color:#0F172A;font-size:14px">Add service</div>
+                    <div style="font-size:12px;color:#94A3B8;margin-top:2px">Create Florida lesson options like 1-hour and 2-hour surf lessons.</div>
+                  </div>
+                </div>
+                <svg class="adm-chevron" style="width:18px;height:18px;color:#CBD5E1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </summary>
+              <div class="adm-service-body">
+                <form method="POST">
+                  <input type="hidden" name="action" value="create_class_type" />
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+                    <div>
+                      <label class="adm-label">Service ID</label>
+                      <input type="text" name="id" required class="adm-input" placeholder="private-2h" />
+                    </div>
+                    <div style="grid-column:span 2">
+                      <label class="adm-label">Name</label>
+                      <input type="text" name="name" required class="adm-input" placeholder="2 Hour Surf Lesson" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Category</label>
+                      <select name="category" class="adm-input">
+                        <option value="lesson">Lesson</option>
+                        <option value="package">Package</option>
+                        <option value="camp">Summer Camp</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="adm-label">Base Price / Person</label>
+                      <input type="number" name="price_per_person" value="75" step="0.01" min="0" required class="adm-input" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Duration (minutes)</label>
+                      <input type="number" name="duration_minutes" value="60" min="30" required class="adm-input" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Min Guests</label>
+                      <input type="number" name="min_participants_per_booking" value="1" min="1" max="100" required class="adm-input" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Max Guests</label>
+                      <input type="number" name="max_participants_per_booking" value="12" min="1" max="100" required class="adm-input" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Max Capacity</label>
+                      <input type="number" name="max_capacity" value="12" min="1" max="100" required class="adm-input" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Sort Order</label>
+                      <input type="number" name="sort_order" value="10" min="0" class="adm-input" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Active</label>
+                      <select name="active" class="adm-input">
+                        <option value="true">Yes - visible in booking</option>
+                        <option value="false">No - hidden</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="adm-label">Badge (optional)</label>
+                      <input type="text" name="badge" class="adm-input" placeholder="Most Popular" />
+                    </div>
+                    <div>
+                      <label class="adm-label">Variant group (optional)</label>
+                      <input type="text" name="variant_group" class="adm-input" placeholder="e.g. surf-lessons" />
+                      <p class="adm-help">Same slug on two rows (e.g. 1h &amp; 2h) merges them into one booking card with a duration step.</p>
+                    </div>
+                    <div style="grid-column:span 3">
+                      <label class="adm-label">Description</label>
+                      <textarea name="description" rows={2} class="adm-input">Surf lesson with pricing that adjusts by group size.</textarea>
+                    </div>
+                    <div style="grid-column:span 3">
+                      <label class="adm-label">Included (comma-separated)</label>
+                      <input type="text" name="included" class="adm-input" value="Surfboard, Leash, Rash guard, Certified instructor" />
+                    </div>
+                    <div style="grid-column:span 3;border:1px solid #E2E8F0;border-radius:12px;padding:14px;background:#F8FAFC">
+                      <div style="font-size:13px;font-weight:800;color:#0F172A;margin-bottom:4px">First weekly slot</div>
+                      <div style="font-size:12px;color:#64748B;margin-bottom:12px">Optional, but recommended: create the first bookable time and its real capacity while adding the service.</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+                        <div>
+                          <label class="adm-label">Day</label>
+                          <select name="first_slot_day_of_week" class="adm-input">
+                            {DOW_LABELS.slice(1).map((d, i) => (
+                              <option value={i + 1}>{d}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label class="adm-label">Start Time</label>
+                          <input type="time" name="first_slot_start_time" class="adm-input" />
+                        </div>
+                        <div>
+                          <label class="adm-label">Slot Capacity</label>
+                          <input type="number" name="first_slot_capacity" value="12" min="0" max="100" class="adm-input" />
+                        </div>
+                        <div>
+                          <label class="adm-label">Booking Mode</label>
+                          <select name="first_slot_booking_mode" class="adm-input">
+                            <option value="shared">Shared capacity</option>
+                            <option value="exclusive">Exclusive</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="adm-tier-editor" style="grid-column:span 3" data-tier-editor>
+                      <input type="hidden" name="price_tiers_visual" value="true" />
+                      <div class="adm-tier-head">
+                        <div>
+                          <label class="adm-label">Pricing by number of people</label>
+                          <div class="adm-help">Leave all rows empty to use the base price for every guest.</div>
+                        </div>
+                        <button type="button" class="adm-btn adm-btn-light" data-add-tier-row>Add tier</button>
+                      </div>
+                      <div class="adm-tier-grid adm-tier-grid-head">
+                        <span>From</span>
+                        <span>To</span>
+                        <span>Label</span>
+                        <span>Price</span>
+                        <span>Type</span>
+                        <span></span>
+                      </div>
+                      <div data-tier-rows>
+                        {DEFAULT_PRICE_TIER_ROWS.map(tier => (
+                          <div class="adm-tier-grid adm-tier-row">
+                            <input type="number" name="price_tier_min" value={tier.min_participants} min="1" class="adm-input" />
+                            <input type="number" name="price_tier_max" value={tier.max_participants ?? ''} min="1" class="adm-input" placeholder="No limit" />
+                            <input type="text" name="price_tier_label" value={tier.label} class="adm-input" placeholder="Group" />
+                            <input type="number" name="price_tier_price" value={tier.price_per_person} min="0" step="0.01" class="adm-input" />
+                            <select name="price_tier_type" class="adm-input">
+                              <option value="per_person" selected={tier.price_type !== 'total'}>Per person</option>
+                              <option value="total" selected={tier.price_type === 'total'}>Total</option>
+                            </select>
+                            <button type="button" class="adm-tier-remove" data-remove-tier-row title="Remove tier">×</button>
+                          </div>
+                        ))}
+                      </div>
+                      <textarea name="price_tiers" class="adm-tier-fallback" aria-hidden="true">{FLORIDA_PRICE_TIERS_EXAMPLE}</textarea>
+                    </div>
+                  </div>
+                  <button type="submit" class="adm-btn adm-btn-teal">Create Service</button>
+                </form>
+              </div>
+            </details>
+            {classTypes.map(ct => (
+              <details class="adm-card adm-accordion">
+                <summary class="adm-service-summary">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style={`width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${ct.active ? '#22C55E' : '#CBD5E1'}`}></div>
+                    <div>
+                      <div style="font-weight:700;color:#0F172A;font-size:14px">{ct.name}</div>
+                      <div style="font-size:12px;color:#94A3B8;margin-top:2px">
+                        {ct.category} ·&nbsp;<strong style="color:#0097A7">{formatPricingTiers(ct)}</strong>
+                        · {ct.min_participants_per_booking ?? 1}–{ct.max_participants_per_booking ?? ct.max_capacity} guests
+                        · {ct.duration_minutes}min
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    {ct.badge && (
+                      <span style="background:#E0F7FA;color:#0097A7;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;border:1px solid #80DEEA">
+                        {ct.badge}
+                      </span>
+                    )}
+                    <svg class="adm-chevron" style="width:18px;height:18px;color:#CBD5E1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </div>
+                </summary>
+                <div class="adm-service-body">
+                  <form method="POST">
+                    <input type="hidden" name="action" value="update_class_type" />
+                    <input type="hidden" name="id" value={ct.id} />
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+                      <div style="grid-column:span 2">
+                        <label class="adm-label">Name</label>
+                        <input type="text" name="name" value={ct.name} required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Badge (optional)</label>
+                        <input type="text" name="badge" value={ct.badge ?? ''} placeholder="e.g. Best Value" class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Category</label>
+                        <select name="category" class="adm-input">
+                          <option value="lesson" selected={ct.category === 'lesson'}>Lesson</option>
+                          <option value="package" selected={ct.category === 'package'}>Package</option>
+                          <option value="camp" selected={ct.category === 'camp'}>Summer Camp</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="adm-label">Price / Person (USD)</label>
+                        <input type="number" name="price_per_person" value={ct.price_per_person} step="0.01" min="0" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Min Guests / Booking</label>
+                        <input type="number" name="min_participants_per_booking" value={ct.min_participants_per_booking ?? 1} min="1" max="100" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Max Guests / Booking</label>
+                        <input type="number" name="max_participants_per_booking" value={ct.max_participants_per_booking ?? ct.max_capacity} min="1" max="100" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Max Capacity</label>
+                        <input type="number" name="max_capacity" value={ct.max_capacity} min="1" max="100" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Duration (minutes)</label>
+                        <input type="number" name="duration_minutes" value={ct.duration_minutes} min="30" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Variant group (optional)</label>
+                        <input type="text" name="variant_group" value={ct.variant_group ?? ''} placeholder="e.g. surf-lessons" class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Sort Order</label>
+                        <input type="number" name="sort_order" value={ct.sort_order} min="0" class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Active</label>
+                        <select name="active" class="adm-input">
+                          <option value="true" selected={ct.active}>Yes — visible in booking</option>
+                          <option value="false" selected={!ct.active}>No — hidden</option>
+                        </select>
+                      </div>
+                      <div style="grid-column:span 3">
+                        <label class="adm-label">Description</label>
+                        <textarea name="description" rows={2} class="adm-input">{ct.description}</textarea>
+                      </div>
+                      <div class="adm-tier-editor" style="grid-column:span 3" data-tier-editor>
+                        <input type="hidden" name="price_tiers_visual" value="true" />
+                        <div class="adm-tier-head">
+                          <div>
+                            <label class="adm-label">Pricing by number of people</label>
+                            <div class="adm-help">Use a blank “To” value for open-ended tiers like 3+ guests.</div>
+                          </div>
+                          <button type="button" class="adm-btn adm-btn-light" data-add-tier-row>Add tier</button>
+                        </div>
+                        <div class="adm-tier-grid adm-tier-grid-head">
+                          <span>From</span>
+                          <span>To</span>
+                          <span>Label</span>
+                          <span>Price</span>
+                          <span>Type</span>
+                          <span></span>
+                        </div>
+                        <div data-tier-rows>
+                          {(getTierRows(ct.price_tiers).length > 0 ? getTierRows(ct.price_tiers) : [{ min_participants: '', max_participants: '', label: '', price_per_person: '', price_type: 'per_person' }]).map((tier: any) => (
+                            <div class="adm-tier-grid adm-tier-row">
+                              <input type="number" name="price_tier_min" value={tier.min_participants} min="1" class="adm-input" placeholder="1" />
+                              <input type="number" name="price_tier_max" value={tier.max_participants} min="1" class="adm-input" placeholder="No limit" />
+                              <input type="text" name="price_tier_label" value={tier.label} class="adm-input" placeholder="Group" />
+                              <input type="number" name="price_tier_price" value={tier.price_per_person} min="0" step="0.01" class="adm-input" placeholder={ct.price_per_person} />
+                              <select name="price_tier_type" class="adm-input">
+                                <option value="per_person" selected={tier.price_type !== 'total'}>Per person</option>
+                                <option value="total" selected={tier.price_type === 'total'}>Total</option>
+                              </select>
+                              <button type="button" class="adm-tier-remove" data-remove-tier-row title="Remove tier">×</button>
+                            </div>
+                          ))}
+                        </div>
+                        <textarea name="price_tiers" class="adm-tier-fallback" aria-hidden="true">{stringifyPriceTiers(ct.price_tiers)}</textarea>
+                      </div>
+                    </div>
+                    <button type="submit" class="adm-btn adm-btn-teal">Save Changes</button>
+                  </form>
+                  <div style="margin-top:18px;border-top:1px solid #E2E8F0;padding-top:16px">
+                    <div style="font-size:13px;font-weight:800;color:#0F172A;margin-bottom:4px">Schedule & capacity</div>
+                    <div style="font-size:12px;color:#64748B;margin-bottom:12px">Each time can have its own capacity and booking behavior.</div>
+                    <form method="POST" style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1.2fr auto;gap:10px;align-items:end;margin-bottom:12px">
+                      <input type="hidden" name="action" value="add_weekly_slot" />
+                      <input type="hidden" name="redirect_to" value="class-types" />
+                      <input type="hidden" name="class_type_id" value={ct.id} />
+                      <div>
+                        <label class="adm-label">Day</label>
+                        <select name="day_of_week" required class="adm-input">
+                          {DOW_LABELS.slice(1).map((d, i) => (
+                            <option value={i + 1}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label class="adm-label">Time</label>
+                        <input type="time" name="start_time" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Capacity</label>
+                        <input type="number" name="capacity" value={ct.max_capacity} min="0" max="100" required class="adm-input" />
+                      </div>
+                      <div>
+                        <label class="adm-label">Mode</label>
+                        <select name="booking_mode" class="adm-input">
+                          <option value="shared">Shared capacity</option>
+                          <option value="exclusive">Exclusive</option>
+                        </select>
+                      </div>
+                      <button type="submit" class="adm-btn adm-btn-teal">Add Time</button>
+                    </form>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+                      {DOW_LABELS.slice(1).map((day, index) => {
+                        const dayNumber = index + 1
+                        const daySlots = weeklySlotsByService[ct.id]?.[dayNumber] ?? []
+                        return (
+                          <div style="border:1px solid #E2E8F0;border-radius:10px;padding:8px;background:#FFFFFF;min-height:74px">
+                            <div style="font-size:11px;font-weight:800;color:#64748B;margin-bottom:6px">{day.slice(0, 3)}</div>
+                            {daySlots.length === 0 ? (
+                              <div style="font-size:11px;color:#CBD5E1">No times</div>
+                            ) : (
+                              <div style="display:flex;flex-direction:column;gap:6px">
+                                {daySlots.map((s: any) => (
+                                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">
+                                    <div>
+                                      <div style="font-size:12px;font-weight:800;color:#0E7490">{formatTime(s.start_time)}</div>
+                                      <div style="font-size:10.5px;color:#64748B">{s.capacity ?? ct.max_capacity} spots · {s.booking_mode === 'exclusive' ? 'exclusive' : 'shared'}</div>
+                                    </div>
+                                    <form method="POST" style="display:inline">
+                                      <input type="hidden" name="action" value="delete_weekly_slot" />
+                                      <input type="hidden" name="id" value={s.id} />
+                                      <button type="submit" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:16px;line-height:1;padding:0;font-family:inherit" title="Remove slot">×</button>
+                                    </form>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+
+        <!-- ══ TAB: WEEKLY SCHEDULE ══════════════════════════════════════════ -->
+        {activeTab === 'weekly-slots' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px">
+            <div class="adm-card adm-card-p">
+              <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:4px">Add recurring time slot</div>
+              <div style="font-size:12.5px;color:#94A3B8;line-height:1.5;margin-bottom:16px">
+                Define which days and times each service runs weekly. Date-specific overrides take priority for individual dates.
+              </div>
+              <form method="POST" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+                <input type="hidden" name="action" value="add_weekly_slot" />
+                <div>
+                  <label class="adm-label">Service</label>
+                  <select name="class_type_id" required class="adm-input" style="min-width:180px">
+                    {classTypes.filter(ct => ct.active).map(ct => (
+                      <option value={ct.id}>{ct.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label class="adm-label">Day of Week</label>
+                  <select name="day_of_week" required class="adm-input" style="width:142px">
+                    {DOW_LABELS.slice(1).map((d, i) => (
+                      <option value={i + 1}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label class="adm-label">Start Time</label>
+                  <input type="time" name="start_time" required class="adm-input" style="width:132px" />
+                </div>
+                <div>
+                  <label class="adm-label">Capacity</label>
+                  <input type="number" name="capacity" min="0" max="100" value="8" required class="adm-input" style="width:104px" />
+                </div>
+                <div>
+                  <label class="adm-label">Mode</label>
+                  <select name="booking_mode" class="adm-input" style="width:156px">
+                    <option value="shared">Shared capacity</option>
+                    <option value="exclusive">Exclusive</option>
+                  </select>
+                </div>
+                <button type="submit" class="adm-btn adm-btn-teal">+ Add Slot</button>
+              </form>
+            </div>
+
+            {classTypes.filter(ct => weeklySlotsByService[ct.id]).map(ct => (
+              <div class="adm-card adm-card-p">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#22C55E;flex-shrink:0"></div>
+                  <span style="font-size:14px;font-weight:700;color:#0F172A">{ct.name}</span>
+                </div>
+                <div class="adm-day-grid">
+                  {[1,2,3,4,5,6,7].map(dow => {
+                    const daySlots: any[] = weeklySlotsByService[ct.id]?.[dow] ?? []
+                    return (
+                      <div class={`adm-day-card ${daySlots.length > 0 ? 'adm-day-on' : 'adm-day-off'}`}>
+                        <div class="adm-day-name">{DOW_LABELS[dow].slice(0, 3)}</div>
+                        {daySlots.length === 0 ? (
+                          <p style="font-size:11px;color:#CBD5E1;margin:0">—</p>
+                        ) : (
+                          <div style="display:flex;flex-direction:column;gap:4px">
+                            {daySlots.map((s: any) => (
+                              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+                                <span>
+                                  <span style="font-size:13px;font-weight:700;color:#0E7490">{formatTime(s.start_time)}</span>
+                                  <span style="display:block;font-size:10.5px;color:#64748B">{s.capacity ?? ct.max_capacity} spots · {s.booking_mode === 'exclusive' ? 'exclusive' : 'shared'}</span>
+                                </span>
+                                <form method="POST" style="display:inline">
+                                  <input type="hidden" name="action" value="delete_weekly_slot" />
+                                  <input type="hidden" name="id" value={s.id} />
+                                  <button type="submit" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:17px;line-height:1;padding:0;font-family:inherit;transition:color 0.1s" title="Remove slot">×</button>
+                                </form>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {weeklySlots.length === 0 && (
+              <div class="adm-card">
+                <div class="adm-empty">
+                  <div class="adm-empty-icon">
+                    <svg style="width:24px;height:24px;color:#94A3B8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                  <p class="adm-empty-title">No weekly slots configured</p>
+                  <p class="adm-empty-sub">Add your first recurring slot using the form above</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <!-- ══ TAB: CAPACITY ═════════════════════════════════════════════════ -->
+        {activeTab === 'capacity' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px">
+            <div class="adm-card adm-card-p">
+              <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:4px">Date-specific capacity override</div>
+              <div style="font-size:12.5px;color:#94A3B8;line-height:1.5;margin-bottom:16px">
+                Legacy date-level override. New bookings now enforce capacity from each weekly or date-specific time slot.
+              </div>
+              <form method="POST" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+                <input type="hidden" name="action" value="set_capacity" />
+                <div>
+                  <label class="adm-label">Service</label>
+                  <select name="class_type_id" required class="adm-input" style="min-width:200px">
+                    {classTypes.filter(ct => ct.active).map(ct => (
+                      <option value={ct.id}>{ct.name} (default: {ct.max_capacity})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label class="adm-label">Date</label>
+                  <input type="date" name="capacity_date" required class="adm-input" style="width:162px" />
+                </div>
+                <div>
+                  <label class="adm-label">Max Capacity (0 = block)</label>
+                  <input type="number" name="max_capacity" min="0" max="100" required class="adm-input" style="width:110px" />
+                </div>
+                <button type="submit" class="adm-btn adm-btn-teal">Save Override</button>
+              </form>
+            </div>
+
+            <div class="adm-card">
+              {capacities.length === 0 ? (
+                <div class="adm-empty">
+                  <div class="adm-empty-icon">
+                    <svg style="width:24px;height:24px;color:#94A3B8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                  </div>
+                  <p class="adm-empty-title">No overrides set</p>
+                  <p class="adm-empty-sub">All services use their default capacity from the class settings</p>
+                </div>
+              ) : (
+                <div style="overflow-x:auto">
+                  <table class="adm-tbl">
+                    <thead>
+                      <tr>
+                        <th>Service</th>
+                        <th>Date</th>
+                        <th>Override Capacity</th>
+                        <th>Default</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {capacities.map((c: any) => (
+                        <tr>
+                          <td style="font-weight:600;color:#0F172A">{c.class_types?.name ?? c.class_type_id}</td>
+                          <td>{new Date(c.capacity_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                          <td>
+                            <span style={`font-weight:800;font-size:16px;color:${c.max_capacity === 0 ? '#DC2626' : '#0097A7'}`}>
+                              {c.max_capacity === 0 ? '🚫 Blocked' : c.max_capacity}
+                            </span>
+                          </td>
+                          <td><span style="color:#94A3B8;font-weight:600">{classTypesById[c.class_type_id]?.max_capacity ?? '—'}</span></td>
+                          <td>
+                            <form method="POST">
+                              <input type="hidden" name="action" value="delete_capacity" />
+                              <input type="hidden" name="id" value={c.id} />
+                              <button type="submit" class="adm-btn-ghost">Delete</button>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- ══ TAB: DATE OVERRIDES ═══════════════════════════════════════════ -->
+        {activeTab === 'date-slots' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px">
+            <div class="adm-card adm-card-p">
+              <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:4px">Date-specific slot override</div>
+              <div style="font-size:12.5px;color:#94A3B8;line-height:1.5;margin-bottom:16px">
+                Slots added here <strong style="color:#475569">replace</strong> the weekly template entirely for that date. Ideal for holidays, special events, or irregular schedules.
+              </div>
+              <form method="POST" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+                <input type="hidden" name="action" value="add_slot" />
+                <div>
+                  <label class="adm-label">Service</label>
+                  <select name="class_type_id" required class="adm-input" style="min-width:180px">
+                    {classTypes.filter(ct => ct.active).map(ct => (
+                      <option value={ct.id}>{ct.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label class="adm-label">Date</label>
+                  <input type="date" name="slot_date" required class="adm-input" style="width:162px" />
+                </div>
+                <div>
+                  <label class="adm-label">Start Time</label>
+                  <input type="time" name="start_time" required class="adm-input" style="width:132px" />
+                </div>
+                <div>
+                  <label class="adm-label">Capacity</label>
+                  <input type="number" name="capacity" min="0" max="100" value="8" required class="adm-input" style="width:104px" />
+                </div>
+                <div>
+                  <label class="adm-label">Mode</label>
+                  <select name="booking_mode" class="adm-input" style="width:156px">
+                    <option value="shared">Shared capacity</option>
+                    <option value="exclusive">Exclusive</option>
+                  </select>
+                </div>
+                <button type="submit" class="adm-btn adm-btn-teal">+ Add Override</button>
+              </form>
+            </div>
+
+            <div class="adm-card">
+              {dateSlots.length === 0 ? (
+                <div class="adm-empty">
+                  <div class="adm-empty-icon">
+                    <svg style="width:24px;height:24px;color:#94A3B8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </div>
+                  <p class="adm-empty-title">No date overrides</p>
+                  <p class="adm-empty-sub">All services follow their weekly template</p>
+                </div>
+              ) : (
+                <div style="overflow-x:auto">
+                  <table class="adm-tbl">
+                    <thead>
+                      <tr>
+                        <th>Service</th>
+                        <th>Date</th>
+                        <th>Override Time</th>
+                        <th>Capacity</th>
+                        <th>Mode</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dateSlots.map((s: any) => (
+                        <tr>
+                          <td style="font-weight:600;color:#0F172A">{s.class_types?.name ?? s.class_type_id}</td>
+                          <td>{new Date(s.slot_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                          <td><span style="font-weight:800;color:#0097A7;font-size:14px">{formatTime(s.start_time)}</span></td>
+                          <td><span style="font-weight:700;color:#0F172A">{s.capacity ?? classTypesById[s.class_type_id]?.max_capacity ?? 1}</span></td>
+                          <td><span style="font-size:11px;font-weight:800;text-transform:uppercase;color:#64748B">{s.booking_mode === 'exclusive' ? 'Exclusive' : 'Shared'}</span></td>
+                          <td>
+                            <form method="POST">
+                              <input type="hidden" name="action" value="delete_slot" />
+                              <input type="hidden" name="id" value={s.id} />
+                              <button type="submit" class="adm-btn-ghost">Delete</button>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- ══ TAB: CAMP ROOMS ═════════════════════════════════════════════ -->
+        {activeTab === 'camp-rooms' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px">
+            <div class="adm-card adm-card-p">
+              <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:4px">Add / Edit Room</div>
+              <form method="POST" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:flex-end">
+                <input type="hidden" name="action" value="upsert_camp_room" />
+                <div>
+                  <label class="adm-label">Room Name *</label>
+                  <input type="text" name="name" required class="adm-input" placeholder="Ocean View Queen" />
+                </div>
+                <div>
+                  <label class="adm-label">Bed Type</label>
+                  <input type="text" name="bed_type" class="adm-input" placeholder="Queen" />
+                </div>
+                <div>
+                  <label class="adm-label">Capacity</label>
+                  <input type="number" name="capacity" min="1" max="4" value="2" class="adm-input" style="width:80px" />
+                </div>
+                <div>
+                  <label class="adm-label">Floor / Location</label>
+                  <input type="text" name="floor_label" class="adm-input" placeholder="2nd floor" />
+                </div>
+                <div>
+                  <label class="adm-label">Photo URL</label>
+                  <input type="url" name="photo_url" class="adm-input" placeholder="https://..." />
+                </div>
+                <div>
+                  <label class="adm-label">Sort Order</label>
+                  <input type="number" name="sort_order" value="0" class="adm-input" style="width:80px" />
+                </div>
+                <div style="grid-column:1/-1">
+                  <label class="adm-label">Description</label>
+                  <input type="text" name="description" class="adm-input" style="width:100%" placeholder="Brief description of the room" />
+                </div>
+                <div style="grid-column:1/-1">
+                  <label class="adm-label">Amenities (comma-separated)</label>
+                  <input type="text" name="amenities" class="adm-input" style="width:100%" placeholder="AC, WiFi, Hot water, Ocean view" />
+                </div>
+                <div>
+                  <label class="adm-label">Active</label>
+                  <select name="is_active" class="adm-input">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+                <div style="display:flex;align-items:flex-end">
+                  <button type="submit" class="adm-btn adm-btn-teal">+ Add Room</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="adm-card">
+              {campRooms.length === 0 ? (
+                <div class="adm-empty">
+                  <p class="adm-empty-title">No rooms yet</p>
+                  <p class="adm-empty-sub">Add your first room above</p>
+                </div>
+              ) : (
+                <div style="overflow-x:auto">
+                  <table class="adm-tbl">
+                    <thead><tr><th>Room</th><th>Bed</th><th>Capacity</th><th>Amenities</th><th>Photo</th><th>Active</th><th></th></tr></thead>
+                    <tbody>
+                      {campRooms.map((r: any) => (
+                        <tr>
+                          <td>
+                            <div style="font-weight:700;color:#0F172A">{r.name}</div>
+                            {r.floor_label && <div style="font-size:11px;color:#94A3B8">{r.floor_label}</div>}
+                            {r.description && <div style="font-size:11px;color:#94A3B8;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{r.description}</div>}
+                          </td>
+                          <td>{r.bed_type}</td>
+                          <td>{r.capacity} pax</td>
+                          <td style="font-size:11px;max-width:180px">{(r.amenities ?? []).join(', ')}</td>
+                          <td>{r.photo_url ? <a href={r.photo_url} target="_blank" style="color:#0097A7;font-size:12px">View</a> : <span style="color:#CBD5E1">—</span>}</td>
+                          <td>
+                            <span style={`font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:${r.is_active ? '#D1FAE5' : '#FEE2E2'};color:${r.is_active ? '#065F46' : '#991B1B'}`}>
+                              {r.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <form method="POST" style="display:inline">
+                              <input type="hidden" name="action" value="delete_camp_room" />
+                              <input type="hidden" name="id" value={r.id} />
+                              <button type="submit" class="adm-btn-ghost" onclick="return confirm('Delete this room?')">Delete</button>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- ══ TAB: CAMP SESSIONS ══════════════════════════════════════════ -->
+        {activeTab === 'camp-sessions' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px">
+            <div class="adm-card adm-card-p">
+              <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:4px">Create New Session</div>
+              <div style="font-size:12.5px;color:#94A3B8;margin-bottom:16px">Sessions always start on Sunday. End date is calculated automatically.</div>
+              <form method="POST" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+                <input type="hidden" name="action" value="upsert_camp_session" />
+                <div>
+                  <label class="adm-label">Nights</label>
+                  <input type="number" min="1" name="nights" required class="adm-input" placeholder="4" style="width:110px" />
+                </div>
+                <div>
+                  <label class="adm-label">Start Date (Sunday)</label>
+                  <input type="date" name="start_date" required class="adm-input" style="width:162px" />
+                </div>
+                <div>
+                  <label class="adm-label">Price / person (USD)</label>
+                  <input type="number" step="0.01" min="0" name="price_per_person_usd" required class="adm-input" placeholder="399.00" style="width:140px" />
+                </div>
+                <div>
+                  <label class="adm-label">Active</label>
+                  <select name="is_active" class="adm-input">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+                <div style="width:100%">
+                  <label class="adm-label">Rooms for this session</label>
+                  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
+                    {campRooms.filter((r:any) => r.is_active).map((r: any) => (
+                      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#475569;cursor:pointer">
+                        <input type="checkbox" name="room_ids" value={r.id} style="accent-color:#0097A7" />
+                        {r.name}
+                      </label>
+                    ))}
+                    {campRooms.filter((r:any) => r.is_active).length === 0 && (
+                      <span style="font-size:12px;color:#94A3B8">Add rooms first in the Camp Rooms tab</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <button type="submit" class="adm-btn adm-btn-teal" style="margin-top:8px">+ Create Session</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="adm-card">
+              {campSessions.length === 0 ? (
+                <div class="adm-empty">
+                  <p class="adm-empty-title">No sessions yet</p>
+                  <p class="adm-empty-sub">Create your first camp session above</p>
+                </div>
+              ) : (
+                <div style="overflow-x:auto">
+                  <table class="adm-tbl">
+                    <thead><tr><th>Type</th><th>Start</th><th>End</th><th>Price/pax</th><th>Rooms</th><th>Active</th><th></th></tr></thead>
+                    <tbody>
+                      {campSessions.map((s: any) => {
+                        const assignedRooms = (s.camp_session_rooms ?? []).length
+                        return (
+                          <tr>
+                            <td><span style="font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E0F7FA;color:#006064">Custom Camp</span></td>
+                            <td style="font-weight:600">{new Date(s.start_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+                            <td>{new Date(s.end_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+                            <td style="font-weight:700;color:#0097A7">${Number(s.price_per_person_usd).toFixed(2)}</td>
+                            <td>{assignedRooms} room{assignedRooms !== 1 ? 's' : ''}</td>
+                            <td><span style={`font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:${s.is_active?'#D1FAE5':'#FEE2E2'};color:${s.is_active?'#065F46':'#991B1B'}`}>{s.is_active?'Active':'Inactive'}</span></td>
+                            <td>
+                              <form method="POST" style="display:inline">
+                                <input type="hidden" name="action" value="delete_camp_session" />
+                                <input type="hidden" name="id" value={s.id} />
+                                <button type="submit" class="adm-btn-ghost" onclick="return confirm('Delete this session and all its bookings?')">Delete</button>
+                              </form>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- ══ TAB: CAMP BOOKINGS ══════════════════════════════════════════ -->
+        {activeTab === 'camp-bookings' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px">
+            <div class="adm-card">
+              {campBookings.length === 0 ? (
+                <div class="adm-empty">
+                  <p class="adm-empty-title">No camp bookings yet</p>
+                  <p class="adm-empty-sub">Bookings will appear here once clients reserve a camp</p>
+                </div>
+              ) : (
+                <div style="overflow-x:auto">
+                  <table class="adm-tbl">
+                    <thead>
+                      <tr><th>Guest</th><th>Camp</th><th>Room</th><th>Dates</th><th>Guests</th><th>Charged</th><th>Full Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                      {campBookings.map((b: any) => (
+                        <tr>
+                          <td>
+                            <div style="font-weight:700;color:#0F172A">{b.guest1_name}</div>
+                            <div style="font-size:11px;color:#94A3B8">{b.guest1_email}</div>
+                            <div style="font-size:11px;color:#94A3B8">{b.guest1_phone}</div>
+                            {(b.guests_json ?? []).slice(1).map((g: any) => (
+                              <div style="font-size:11px;color:#64748B;margin-top:2px">+ {g.name}{g.email ? ` · ${g.email}` : ''}</div>
+                            ))}
+                          </td>
+                          <td>
+                            <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:#E0F7FA;color:#006064">
+                              Custom Camp
+                            </span>
+                          </td>
+                          <td style="font-weight:600">{b.camp_rooms?.name ?? '—'}</td>
+                          <td style="font-size:12px">
+                            {b.camp_sessions ? (
+                              <span>{new Date(b.camp_sessions.start_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} → {new Date(b.camp_sessions.end_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+                            ) : '—'}
+                          </td>
+                          <td>{b.persons}</td>
+                          <td style="font-weight:700;color:#0097A7">${Number(b.charged_amount_usd).toFixed(2)}</td>
+                          <td>${Number(b.full_amount_usd).toFixed(2)}</td>
+                          <td>
+                            <span style="font-size:11px;background:#F1F5F9;padding:2px 7px;border-radius:999px;color:#475569">
+                              {b.payment_mode === 'deposit' ? `Deposit ${Math.round((b.charged_amount_usd/b.full_amount_usd)*100)}%` : 'Full'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={`font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:${b.status==='confirmed'?'#D1FAE5':b.status==='pending'?'#FEF9C3':'#FEE2E2'};color:${b.status==='confirmed'?'#065F46':b.status==='pending'?'#A16207':'#991B1B'}`}>
+                              {b.status}
+                            </span>
+                          </td>
+                          <td>
+                            <form method="POST" style="display:flex;gap:4px">
+                              <input type="hidden" name="action" value="update_camp_booking_status" />
+                              <input type="hidden" name="id" value={b.id} />
+                              <select name="status" class="adm-input" style="font-size:12px;padding:4px 8px;width:auto">
+                                <option value="pending" selected={b.status==='pending'}>Pending</option>
+                                <option value="confirmed" selected={b.status==='confirmed'}>Confirmed</option>
+                                <option value="cancelled" selected={b.status==='cancelled'}>Cancelled</option>
+                              </select>
+                              <button type="submit" class="adm-btn adm-btn-teal" style="font-size:12px;padding:4px 10px">Save</button>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- ══ TAB: CAMP SETTINGS ══════════════════════════════════════════ -->
+        {activeTab === 'camp-settings' && (
+          <div class="adm-tab" style="display:flex;flex-direction:column;gap:16px;max-width:480px">
+            <div class="adm-card adm-card-p">
+              <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:4px">Payment Configuration</div>
+              <div style="font-size:12.5px;color:#94A3B8;line-height:1.5;margin-bottom:20px">
+                Choose whether clients pay the full amount or a deposit at booking time. Changes take effect immediately for new bookings.
+              </div>
+              <form method="POST" style="display:flex;flex-direction:column;gap:16px">
+                <input type="hidden" name="action" value="save_camp_settings" />
+                <div>
+                  <label class="adm-label">Payment Mode</label>
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px 14px;border:1.5px solid #E2E8F0;border-radius:12px;transition:border-color 0.15s" id="mode-full-label">
+                      <input type="radio" name="payment_mode" value="full" checked={campSettings.payment_mode === 'full'} style="accent-color:#0097A7" onchange="document.getElementById('deposit-row').style.opacity='0.4'" />
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:#0F172A">Full payment</div>
+                        <div style="font-size:11.5px;color:#94A3B8">Client pays 100% at booking</div>
+                      </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px 14px;border:1.5px solid #E2E8F0;border-radius:12px;transition:border-color 0.15s">
+                      <input type="radio" name="payment_mode" value="deposit" checked={campSettings.payment_mode === 'deposit'} style="accent-color:#0097A7" onchange="document.getElementById('deposit-row').style.opacity='1'" />
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:#0F172A">Deposit</div>
+                        <div style="font-size:11.5px;color:#94A3B8">Client pays a % now, rest at check-in</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div id="deposit-row" style={`opacity:${campSettings.payment_mode === 'deposit' ? '1' : '0.4'}`}>
+                  <label class="adm-label">Deposit Percentage</label>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <input type="number" name="deposit_percentage" min="10" max="100" value={campSettings.deposit_percentage} class="adm-input" style="width:100px" />
+                    <span style="font-size:13px;color:#64748B">%</span>
+                  </div>
+                  <div style="font-size:11.5px;color:#94A3B8;margin-top:4px">
+                    Example: with 30% deposit on a $798 booking → client pays $239.40 now
+                  </div>
+                </div>
+                <button type="submit" class="adm-btn adm-btn-teal" style="width:fit-content">Save Settings</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'payment-settings' && (
+          <PaymentConfig authToken={ADMIN_PASSWORD} />
+        )}
+
+        {activeTab === 'booking-settings' && (
+          <>
+            <BookingSettings authToken={ADMIN_PASSWORD} />
+
+            {Astro.url.searchParams.get('cleared') === '1' && (
+              <div style="margin-top:16px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:14px 18px;color:#166534;font-size:13px;font-weight:600">
+                ✓ All bookings were deleted.
+              </div>
+            )}
+
+            <div style="margin-top:24px;background:#FEF2F2;border:1px solid #FECACA;border-radius:16px;padding:22px 24px">
+              <div style="font-size:14px;font-weight:800;color:#991B1B;margin-bottom:4px">Danger Zone</div>
+              <p style="font-size:13px;color:#7F1D1D;line-height:1.55;margin:0 0 14px;max-width:540px">
+                Permanently delete <strong>all {stats.total} booking{stats.total === 1 ? '' : 's'}</strong> (lessons and camps).
+                Use this to clear test data before going live — this cannot be undone.
+              </p>
+              <form method="POST" onsubmit="return confirm('Delete ALL bookings permanently?\n\nThis removes every lesson and camp reservation and cannot be undone.')">
+                <input type="hidden" name="action" value="delete_all_bookings" />
+                <button type="submit" style="background:#DC2626;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer">
+                  Delete all bookings
+                </button>
+              </form>
+            </div>
+          </>
+        )}
+
+      </main>
+    </div>
+  </div>
+)}
+
+<script>
+  // Cerrar dialog al hacer click en el backdrop
+  document.addEventListener('click', e => {
+    if (e.target instanceof HTMLDialogElement) e.target.close()
+  })
+
+  document.addEventListener('click', e => {
+    const target = e.target
+    if (!(target instanceof HTMLElement)) return
+
+    const addButton = target.closest('[data-add-tier-row]')
+    if (addButton) {
+      const editor = addButton.closest('[data-tier-editor]')
+      const rows = editor?.querySelector('[data-tier-rows]')
+      if (!rows) return
+
+      const row = document.createElement('div')
+      row.className = 'adm-tier-grid adm-tier-row'
+      row.innerHTML = `
+        <input type="number" name="price_tier_min" min="1" class="adm-input" placeholder="1" />
+        <input type="number" name="price_tier_max" min="1" class="adm-input" placeholder="No limit" />
+        <input type="text" name="price_tier_label" class="adm-input" placeholder="Group" />
+        <input type="number" name="price_tier_price" min="0" step="0.01" class="adm-input" placeholder="65" />
+        <select name="price_tier_type" class="adm-input">
+          <option value="per_person">Per person</option>
+          <option value="total">Total</option>
+        </select>
+        <button type="button" class="adm-tier-remove" data-remove-tier-row title="Remove tier">×</button>
+      `
+      rows.appendChild(row)
+      const firstInput = row.querySelector('input')
+      if (firstInput instanceof HTMLInputElement) firstInput.focus()
+      return
+    }
+
+    const removeButton = target.closest('[data-remove-tier-row]')
+    if (removeButton) {
+      removeButton.closest('.adm-tier-row')?.remove()
+    }
+  })
+</script>
+</body>
+</html>

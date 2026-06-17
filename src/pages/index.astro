@@ -1,0 +1,588 @@
+---
+export const prerender = true
+import BaseLayout from '../layouts/BaseLayout.astro'
+import FAQSchema from '../components/seo/FAQSchema.astro'
+import { seoData, ROUTES } from '../lib/seo'
+
+const seo = seoData.home
+
+const faqs = [
+  { question: 'What’s the best surf school in Tamarindo for complete beginners?', answer: 'Look for three things: small groups, instructors in the water with you, and lessons scheduled around the tide. At Outsider Surf Academy we built our school around those three — groups capped at 4 students per instructor, your instructor next to you the entire lesson, and sessions booked for the best tide window of your day. Most first-timers stand up within their first lesson.' },
+  { question: 'How much do surf lessons cost in Tamarindo, Costa Rica?', answer: 'In Tamarindo, lessons typically run $45–$90 per person. At Outsider Surf Academy, group lessons start at $50 per person, semi-private at $65, and private lessons at $80. Every lesson includes the board, rash guard, leash, wax and a bilingual instructor — no extra equipment fees.' },
+  { question: 'I’m in my 40s and not in great shape. Can I still learn to surf?', answer: 'Yes — honestly, a big part of the people we teach are between 30 and 50, on vacation, and haven’t exercised much lately. You learn in waist-deep water, the instructor pushes you into waves so you’re not exhausting yourself paddling, and we go at your pace. If you can get up off the floor, you can learn to surf.' },
+  { question: 'Is Tamarindo safe for learning to surf?', answer: 'Tamarindo is one of the safest beaches in Costa Rica to learn: sandy bottom, warm water year-round, and gentle waves in waist-deep water. We add our own layer: morning condition checks, a safety briefing before every lesson, and if conditions aren’t right for beginners, we reschedule — no exceptions.' },
+  { question: 'Can my kids take surf lessons? What’s the minimum age?', answer: 'We teach kids from age 6, and parents can join the same lesson. Kids always surf in shallow water with an instructor within arm’s reach, on big stable soft-top boards. Fair warning: your kids will probably stand up before you do.' },
+  { question: 'Do I need to book in advance, or can I just show up?', answer: 'You can book online in about two minutes, or message us on WhatsApp. In high season (December–April) we recommend booking 1–2 days ahead, because the best tide slots fill first. Already in Tamarindo and want to surf today? Message us anyway — if there’s space in a good window, you’re in.' },
+  { question: 'What happens if it rains on the day of my lesson?', answer: 'Rain doesn’t cancel a surf lesson — you’re getting wet anyway, and surfing in warm rain in Costa Rica is a great memory. The only thing that moves a lesson is ocean conditions: if waves or currents aren’t safe for beginners, we reschedule you or refund you. The ocean decides, not the weather app.' },
+  { question: 'How many lessons do I need before I can surf on my own?', answer: 'Most people ride their first waves during lesson one. After 3–5 lessons, most students can paddle into small waves and pop up without help. If you’re in Tamarindo for a week, a 3-lesson package is the sweet spot: you’ll leave actually knowing how to surf.' },
+  { question: 'What’s included in a surf lesson at Outsider Surf Academy?', answer: 'Everything you need: a soft-top board matched to your size, rash guard, leash and wax, plus a certified bilingual instructor — and your lesson scheduled at the best tide of the day. You bring a swimsuit, reef-safe sunscreen and water. We also take photos of your session.' },
+  { question: 'What makes Outsider different from other surf schools in Tamarindo?', answer: 'The big schools are great at moving lots of students every day. We deliberately work the opposite way: groups capped at 4, instructors who know your name, lessons timed to the tide, and direct WhatsApp contact with the team that will teach you. If you want to be a student and not a ticket number, that’s what we built.' },
+]
+---
+
+<BaseLayout title={seo.title} description={seo.description} slug={seo.slug} keyfocus={seo.keyfocus} image={seo.image} synonyms={seo.synonyms} transparentNav={true}>
+  <FAQSchema slot="head" items={faqs} />
+
+  <div class="lp">
+
+    <!-- ═══════════ HERO ═══════════ -->
+    <header class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-inner">
+        <div class="hero-content">
+          <div class="hero-coords"><span class="dot"></span>Tamarindo · Guanacaste · Costa Rica</div>
+          <h1>Surf School in Tamarindo, Costa Rica <span class="accent">— catch your first wave today</span></h1>
+          <p class="hero-sub">Private, semi-private and group surf lessons for all ages and levels. Equipment, rash guard and a bilingual instructor included. Book in two minutes, surf today.</p>
+          <div class="hero-ctas">
+            <a href={ROUTES.BOOK} class="lp-btn lp-btn-sun">Book Your Lesson
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <a href="#lessons" class="lp-btn lp-btn-line">View Lessons</a>
+            <div class="hero-rating">
+              <span class="stars">★★★★★</span>
+              <span><b>Rated 5.0</b> on Google by our students</span>
+            </div>
+          </div>
+          <div class="hero-conditions" aria-label="Today's surf conditions in Tamarindo">
+            <span class="hc-live">Conditions now</span>
+            <span class="hc-sep"></span>
+            <span class="hc-item"><b>1.4m</b><span>Swell</span></span>
+            <span class="hc-sep"></span>
+            <span class="hc-item"><b>12s</b><span>Period</span></span>
+            <span class="hc-sep"></span>
+            <span class="hc-item"><b>Offshore</b><span>Wind 6kt</span></span>
+            <span class="hc-sep"></span>
+            <span class="hc-item"><b>28°C</b><span>Water</span></span>
+            <span class="hc-sep"></span>
+            <span class="hc-item"><b class="good">Beginner</b><span>Best for</span></span>
+          </div>
+        </div>
+      </div>
+      <!-- The wave (ocean fill) flows straight into the dark stats band -->
+      <div class="hero-wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 L0,42 Q240,0 480,42 Q720,84 960,42 Q1200,0 1440,42 L1440,80 Z" fill="#06322E"/>
+        </svg>
+      </div>
+    </header>
+
+    <!-- ═══════════ STATS BAND ═══════════ -->
+    <section class="stats" aria-label="Why surfers choose Outsider">
+      <div class="lpw">
+        <div class="stats-grid">
+          <div class="stat reveal"><div class="stat-num">1<span>:4</span></div><div class="stat-lbl">Max students / instructor</div></div>
+          <div class="stat reveal"><div class="stat-num">2<span>h</span></div><div class="stat-lbl">Sand + water lesson</div></div>
+          <div class="stat reveal"><div class="stat-num">27–29<span>°C</span></div><div class="stat-lbl">Warm water all year</div></div>
+          <div class="stat reveal"><div class="stat-num">100<span>%</span></div><div class="stat-lbl">Equipment included</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ LESSONS ═══════════ -->
+    <section class="lessons" id="lessons">
+      <div class="lpw">
+        <div class="section-head reveal">
+          <span class="eyebrow center">Choose your format</span>
+          <h2>Surf lessons for <em>every level</em></h2>
+          <p>Never touched a surfboard, or surfed once five years ago? Perfect — that’s exactly who we teach in Tamarindo every day.</p>
+        </div>
+        <div class="cards">
+
+          <div class="card reveal">
+            <div class="card-top">
+              <div class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M2 21v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/><path d="M16 14a4 4 0 0 1 4 4v1"/></svg></div>
+              <span class="card-tier">Format 01</span>
+            </div>
+            <h3>Group Lesson</h3>
+            <div class="card-price"><strong>$50</strong><span>/ person · 2 hours</span></div>
+            <p class="card-desc">The social way to learn. Never more than 4 students per instructor — real feedback and real time in the water, nothing like the crowded lessons you’ve seen.</p>
+            <ul class="card-features">
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Max 4 students per instructor</li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Board &amp; rash guard included</li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Perfect for solo travelers</li>
+            </ul>
+            <a href={ROUTES.GROUP} class="card-cta">Check Availability</a>
+          </div>
+
+          <div class="card featured reveal">
+            <span class="card-badge">Most Popular</span>
+            <div class="card-top">
+              <div class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20v-1a4.5 4.5 0 0 1 4.5-4.5h3A4.5 4.5 0 0 1 14 19v1"/><path d="M14 14.5A4.5 4.5 0 0 1 17.5 14h0A4.5 4.5 0 0 1 22 18.5V20"/></svg></div>
+              <span class="card-tier">Format 02</span>
+            </div>
+            <h3>Semi-Private</h3>
+            <div class="card-price"><strong>$65</strong><span>/ person · 2–3 people</span></div>
+            <p class="card-desc">Built for couples &amp; friends. Share one instructor, keep individual corrections — at a lower price per person. The sweet spot for most visitors.</p>
+            <ul class="card-features">
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 2–3 people, dedicated instructor</li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Board &amp; rash guard included</li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Ideal for couples &amp; friends</li>
+            </ul>
+            <a href={ROUTES.SEMI_PRIVATE} class="card-cta">Check Availability</a>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-top">
+              <div class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg></div>
+              <span class="card-tier">Format 03</span>
+            </div>
+            <h3>Private 1-on-1</h3>
+            <div class="card-price"><strong>$80</strong><span>/ person · 1-on-1</span></div>
+            <p class="card-desc">One instructor, focused entirely on you. Your pace, your technique, your questions — the fastest way to learn and the most comfortable if you’re nervous.</p>
+            <ul class="card-features">
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 100% instructor attention</li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Board &amp; rash guard included</li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Fastest progression</li>
+            </ul>
+            <a href={ROUTES.PRIVATE} class="card-cta">Check Availability</a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <div class="horizon"></div>
+
+    <!-- ═══════════ WHY ═══════════ -->
+    <section class="why" id="why">
+      <div class="lpw">
+        <div class="two-col">
+          <div class="img-frame reveal">
+            <img src="/images/surf-school-tamarindo-beginner-lesson.jpeg" alt="Beginner surf lesson on a sandy-bottom beach with a bilingual instructor" loading="lazy" />
+            <span class="img-tag"><b>Capped at 4</b> students per instructor</span>
+          </div>
+          <div class="prose reveal">
+            <span class="eyebrow">Why Tamarindo</span>
+            <h2>Warm water, sandy bottom, <em>forgiving</em> waves</h2>
+            <p>The main break at Tamarindo is a classic beach break — waves rolling in over a soft sandy bottom, with no rocks and no reef. The water sits at 27–29 °C year-round, so you’re in the ocean, not surviving it.</p>
+            <p>Waves break waist-to-chest high: powerful enough to actually ride, forgiving enough that falling doesn’t hurt. That rare combination is exactly why Tamarindo is one of the best places in the world to learn.</p>
+            <div class="facts">
+              <div class="fact"><div class="fact-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5V14a4 4 0 1 1-4 0V4.5a2 2 0 1 1 4 0Z"/></svg></div><p>Water 27–29 °C all year</p></div>
+              <div class="fact"><div class="fact-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c2-3 5-4 8-2s6 2 8-1"/><path d="M2 13c2-3 5-4 8-2s6 2 8-1"/></svg></div><p>Sandy bottom — no rocks, no reef</p></div>
+              <div class="fact"><div class="fact-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-5 6-5 9 0s6 5 9 0"/></svg></div><p>Consistent waist-to-chest waves</p></div>
+              <div class="fact"><div class="fact-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></div><p>Lessons timed to the best tide</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ HOW IT WORKS ═══════════ -->
+    <section class="experience" id="how">
+      <div class="lpw">
+        <div class="section-head reveal">
+          <span class="eyebrow center on-dark">What to expect</span>
+          <h2>Your lesson, <em>step by step</em></h2>
+          <p>A lot of people book without knowing what they’re walking into. Here’s exactly what happens — from the sand to your first wave.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal">
+            <div class="step-n">01</div>
+            <h3>Safety &amp; beach practice</h3>
+            <p>Every lesson starts on the sand: ocean safety, reading currents, posture and the pop-up — practiced dry before you touch the water. About 20–25 minutes that make everything click faster.</p>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">02</div>
+            <h3>Your first waves</h3>
+            <p>Your instructor stays with you the entire time in the water — whitewater first, a real push at the right moment, feedback between every wave. Most students stand up on their first or second attempt.</p>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">03</div>
+            <h3>Leave with skills</h3>
+            <p>By the end of two hours you’re riding waves with control and feeling the timing on your own — not just “kind of stood up once.” You’ll leave with the foundation to keep improving.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ INCLUDED ═══════════ -->
+    <section class="included">
+      <div class="lpw">
+        <div class="section-head reveal">
+          <span class="eyebrow center">No hidden extras</span>
+          <h2>Everything’s included</h2>
+        </div>
+        <div class="inc-grid">
+          <div class="inc-item reveal"><div class="inc-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c6-2 12-8 18-18"/><path d="M14 4c2 0 4 2 4 4"/></svg></div><p>Soft-top board for your size</p></div>
+          <div class="inc-item reveal"><div class="inc-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 8 4h8l4 4-3 2v10H7V10z"/></svg></div><p>Rash guard, leash &amp; wax</p></div>
+          <div class="inc-item reveal"><div class="inc-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 3 2 6 2s6-1 6-2v-5"/></svg></div><p>Bilingual instructor (EN/ES)</p></div>
+          <div class="inc-item reveal"><div class="inc-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/></svg></div><p>Safety briefing &amp; photos</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ INSTRUCTORS ═══════════ -->
+    <section class="instructors" id="instructors">
+      <div class="lpw">
+        <div class="two-col reverse">
+          <div class="img-frame reveal">
+            <img src="/images/surf-school-tamarindo-beach-surf-instructor-student.jpeg" alt="Certified bilingual surf instructor coaching a student in Tamarindo, Costa Rica" loading="lazy" />
+            <span class="img-tag"><b>Local</b> · bilingual · certified</span>
+          </div>
+          <div class="prose reveal">
+            <span class="eyebrow">Your instructors</span>
+            <h2>Locals who surf this break <em>every day</em></h2>
+            <p>Our instructors grew up surfing Guanacaste. They know every shift in the break, every tide pattern, and exactly where to position a beginner to catch the right wave at the right moment.</p>
+            <p>You won’t be handed to a trainee. Every session is led by someone who teaches in English and Spanish and has put real hours in the water with students just like you.</p>
+            <div class="badges">
+              <span class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Certified instructors</span>
+              <span class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> CPR &amp; First Aid</span>
+              <span class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Bilingual EN / ES</span>
+              <span class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> All ages &amp; levels</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ TESTIMONIALS ═══════════ -->
+    <section class="testimonials">
+      <div class="lpw">
+        <div class="section-head reveal">
+          <span class="eyebrow center">Student reviews</span>
+          <h2>What our surfers say</h2>
+        </div>
+        <div class="reviews">
+          <div class="review reveal">
+            <div class="stars">★★★★★</div>
+            <blockquote>“Never touched a board in my life. Within 90 minutes I was standing up and riding on my own. He read the ocean perfectly — knew exactly when to tell me to paddle.”</blockquote>
+            <div class="reviewer"><div class="av a1">JM</div><div><div class="rev-name">Jake M.</div><div class="rev-origin">Seattle, USA</div></div></div>
+          </div>
+          <div class="review reveal">
+            <div class="stars">★★★★★</div>
+            <blockquote>“We booked the semi-private as a couple and it was the highlight of our Costa Rica trip. Small-group feel, patient instructor. We both stood up on the first session.”</blockquote>
+            <div class="reviewer"><div class="av a2">SL</div><div><div class="rev-name">Sophie L.</div><div class="rev-origin">London, UK</div></div></div>
+          </div>
+          <div class="review reveal">
+            <div class="stars">★★★★★</div>
+            <blockquote>“Took my kids (8 and 11) for lessons. Calm, encouraging, very safety-conscious. As a parent, knowing they were completely safe made the whole thing perfect.”</blockquote>
+            <div class="reviewer"><div class="av a3">CR</div><div><div class="rev-name">Carlos R.</div><div class="rev-origin">Toronto, Canada</div></div></div>
+          </div>
+        </div>
+        <div class="reviews-cta reveal">
+          <!-- TODO: point to your Google Business reviews URL -->
+          <a href="#" class="lp-btn lp-btn-ghost" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 11v2.8h4.6c-.2 1.2-1.5 3.5-4.6 3.5a5.3 5.3 0 0 1 0-10.6c1.5 0 2.5.6 3.1 1.2l2.1-2C16 4.6 14.2 4 12 4a8 8 0 1 0 0 16c4.6 0 7.7-3.2 7.7-7.8 0-.5 0-.9-.1-1.2H12Z"/></svg>
+            Read All Reviews on Google
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ RENTALS BANNER ═══════════ -->
+    <section class="rentals">
+      <div class="lpw">
+        <div class="rentals-card reveal">
+          <div class="rentals-text">
+            <h2>Surfboard Rentals in Tamarindo</h2>
+            <p>Already know how to surf? We rent quality boards — softtops, funboards and shortboards — by the hour, day or week, right on Tamarindo Beach.</p>
+          </div>
+          <a href={ROUTES.RENTALS} class="lp-btn lp-btn-white">See Boards &amp; Prices</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ FAQ ═══════════ -->
+    <section class="faq" id="faq">
+      <div class="lpw">
+        <div class="section-head reveal">
+          <span class="eyebrow center">Before you book</span>
+          <h2>Frequently asked questions</h2>
+          <p>Everything you need to know about surf lessons in Tamarindo — answered honestly.</p>
+        </div>
+        <div class="faq-wrap">
+          {faqs.map(f => (
+            <div class="faq-item reveal">
+              <button class="faq-q">{f.question}<span class="faq-ico">+</span></button>
+              <div class="faq-a"><div class="faq-inner"><p>{f.answer}</p></div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ FINAL CTA ═══════════ -->
+    <section class="cta" id="book">
+      <div class="lpw">
+        <div class="cta-content reveal">
+          <span class="eyebrow center on-dark">Ready to paddle out?</span>
+          <h2>Book your lesson in <em>Tamarindo</em></h2>
+          <p>The waves are here, the boards are waxed. The only thing missing is you. Book online in two minutes, or message us on WhatsApp.</p>
+          <div class="cta-btns">
+            <a href={ROUTES.BOOK} class="lp-btn lp-btn-sun">Book a Lesson Now
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <a href={ROUTES.CONTACT} class="lp-btn lp-btn-line">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.125 1.522 5.866L0 24l6.278-1.487C8.016 23.468 9.975 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.662-.513-5.18-1.408l-.371-.22-3.727.882.942-3.618-.244-.382A9.86 9.86 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              WhatsApp Us
+            </a>
+          </div>
+          <div class="cta-note">FREE CANCELLATION UP TO 48H · BOARD &amp; RASH GUARD ALWAYS INCLUDED</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  /* ── Local tokens (exact mockup look, independent of global re-skin) ──── */
+  .lp {
+    --ocean:#06322E; --ocean-2:#0A463F;
+    --teal:#00B4A2; --teal-700:#00897C;
+    --sun:#FF6B3D; --sun-700:#E9551F;
+    --sand:#F7F2EA; --sand-2:#EFE6D5; --sand-3:#E7DCC6;
+    --ink:#16241F; --muted:#5E6F66; --muted-d:rgba(247,242,234,.62);
+    --line:rgba(22,36,31,.14); --line-d:rgba(247,242,234,.16); --foam:#fff;
+    --font-d:var(--font-display); --font-b:var(--font-body); --font-m:var(--font-mono);
+    --r:18px; --r-sm:11px;
+    --sh:0 2px 8px rgba(6,50,46,.05), 0 14px 40px rgba(6,50,46,.07);
+    --sh-lg:0 30px 70px rgba(6,50,46,.16);
+    --ease:cubic-bezier(.22,.61,.36,1);
+    color:var(--ink);
+  }
+  .lp :global(*) { box-sizing:border-box; }
+  .lpw { max-width:1180px; margin:0 auto; padding:0 2rem; }
+
+  /* shared type */
+  .lp .eyebrow { display:inline-flex; align-items:center; gap:.6rem; font-family:var(--font-m); font-size:.72rem; font-weight:400; letter-spacing:.18em; text-transform:uppercase; color:var(--teal-700); margin-bottom:0; }
+  .lp .eyebrow::before { content:''; width:22px; height:1px; background:currentColor; opacity:.6; }
+  .lp .eyebrow.center { justify-content:center; }
+  .lp .eyebrow.on-dark { color:var(--teal); }
+
+  .section-head { max-width:660px; margin:0 auto 3.25rem; text-align:center; }
+  .section-head h2 { font-family:var(--font-d); font-optical-sizing:auto; font-size:clamp(2.1rem,4.4vw,3.1rem); font-weight:500; letter-spacing:-.015em; line-height:1.08; margin:1rem 0 .9rem; color:var(--ink); }
+  .section-head h2 em { font-style:italic; color:var(--teal-700); font-weight:400; }
+  .section-head p { color:var(--muted); font-size:1.06rem; }
+
+  /* buttons */
+  .lp-btn { display:inline-flex; align-items:center; gap:.55rem; padding:.95rem 1.8rem; border-radius:50px; font-family:var(--font-b); font-size:.95rem; font-weight:600; cursor:pointer; border:none; transition:transform .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease), color .25s var(--ease); }
+  .lp-btn svg { transition:transform .25s var(--ease); }
+  .lp-btn-sun { background:var(--sun); color:#fff; box-shadow:0 8px 22px rgba(255,107,61,.30); }
+  .lp-btn-sun:hover { background:var(--sun-700); transform:translateY(-2px); box-shadow:0 14px 32px rgba(255,107,61,.40); }
+  .lp-btn-sun:hover svg { transform:translateX(4px); }
+  .lp-btn-line { background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.45); }
+  .lp-btn-line:hover { background:rgba(255,255,255,.10); border-color:#fff; transform:translateY(-2px); }
+  .lp-btn-ghost { background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+  .lp-btn-ghost:hover { border-color:var(--teal); color:var(--teal-700); transform:translateY(-2px); }
+  .lp-btn-white { background:#fff; color:var(--ocean); }
+  .lp-btn-white:hover { background:var(--sand-2); transform:translateY(-2px); }
+
+  /* hero */
+  .hero { min-height:100svh; position:relative; display:flex; align-items:center; overflow:hidden; padding:7rem 0 8rem; }
+  .hero-bg { position:absolute; inset:0; z-index:0; background:
+      linear-gradient(105deg, rgba(6,50,46,.80) 0%, rgba(6,50,46,.45) 48%, rgba(6,50,46,.32) 100%),
+      linear-gradient(to top, rgba(6,50,46,.68), transparent 42%),
+      url('/images/hero-home.jpeg') center 32%/cover; }
+  .hero-inner { position:relative; z-index:2; max-width:1180px; margin:0 auto; padding:0 2rem; width:100%; }
+  .hero-content { max-width:680px; animation:lp-fadeUp .9s var(--ease) .1s both; }
+  @keyframes lp-fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  .hero-coords { font-family:var(--font-m); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.82); display:inline-flex; align-items:center; gap:.7rem; margin-bottom:1.6rem; }
+  .hero-coords .dot { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:lp-pulse 2.4s ease-out infinite; }
+  @keyframes lp-pulse { 0%{box-shadow:0 0 0 0 rgba(0,180,162,.55);} 70%{box-shadow:0 0 0 10px rgba(0,180,162,0);} 100%{box-shadow:0 0 0 0 rgba(0,180,162,0);} }
+  .hero h1 { font-family:var(--font-d); font-optical-sizing:auto; font-size:clamp(2.4rem,5.2vw,4.1rem); font-weight:500; color:#fff; line-height:1.07; letter-spacing:-.018em; margin-bottom:1.4rem; }
+  .hero h1 .accent { color:var(--teal); font-style:italic; font-weight:400; }
+  .hero-sub { font-size:clamp(1.02rem,1.7vw,1.17rem); color:rgba(255,255,255,.84); max-width:520px; margin-bottom:2.3rem; line-height:1.65; }
+  .hero-ctas { display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
+  .hero-rating { display:flex; align-items:center; gap:.6rem; margin-left:.4rem; color:rgba(255,255,255,.9); font-size:.875rem; }
+  .hero-rating .stars { color:#FFC24B; letter-spacing:1px; font-size:.85rem; }
+  .hero-rating b { font-weight:700; }
+
+  .hero-conditions { display:inline-flex; align-items:center; gap:1.15rem; flex-wrap:wrap; margin-top:2.4rem; padding:.85rem 1.35rem; background:rgba(6,50,46,.30); border:1px solid rgba(255,255,255,.18); border-radius:14px; -webkit-backdrop-filter:saturate(140%) blur(12px); backdrop-filter:saturate(140%) blur(12px); }
+  .hc-live { font-family:var(--font-m); font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); display:inline-flex; align-items:center; gap:.5rem; }
+  .hc-live::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--teal); animation:lp-pulse 2.4s ease-out infinite; }
+  .hc-item { display:flex; align-items:baseline; gap:.42rem; font-family:var(--font-m); }
+  .hc-item b { color:#fff; font-size:.92rem; font-weight:700; }
+  .hc-item b.good { color:var(--teal); }
+  .hc-item span { color:rgba(255,255,255,.6); font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; }
+  .hc-sep { width:1px; height:15px; background:rgba(255,255,255,.22); }
+
+  .hero-wave { position:absolute; bottom:-1px; left:0; right:0; z-index:3; line-height:0; }
+  .hero-wave svg { width:100%; display:block; }
+
+  /* stats */
+  .stats { background:var(--ocean); padding:3.4rem 0 4rem; position:relative; z-index:2; }
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2.4rem 1.5rem; text-align:center; }
+  .stat { position:relative; }
+  .stat + .stat::before { content:''; position:absolute; left:-.75rem; top:50%; transform:translateY(-50%); width:1px; height:48px; background:var(--line-d); }
+  .stat-num { font-family:var(--font-d); font-optical-sizing:auto; font-size:clamp(2.5rem,4.3vw,3.15rem); font-weight:600; color:#fff; line-height:1; margin-bottom:.5rem; letter-spacing:-.01em; }
+  .stat-num span { color:var(--teal); }
+  .stat-lbl { font-family:var(--font-m); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-d); }
+
+  /* lessons */
+  .lessons { padding:6rem 0; }
+  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem; align-items:stretch; }
+  .card { background:var(--foam); border:1px solid var(--line); border-radius:var(--r); padding:2rem 1.6rem; position:relative; display:flex; flex-direction:column; transition:transform .3s var(--ease), box-shadow .3s var(--ease); }
+  .card:hover { transform:translateY(-6px); box-shadow:var(--sh); }
+  .card.featured { border:1.5px solid var(--teal); box-shadow:var(--sh); }
+  .card-badge { position:absolute; top:-12px; left:1.6rem; background:var(--teal); color:#fff; font-family:var(--font-m); font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.32rem 1rem; border-radius:50px; }
+  .card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1.1rem; }
+  .card-icon { width:48px; height:48px; border-radius:13px; background:rgba(0,180,162,.10); display:flex; align-items:center; justify-content:center; color:var(--teal-700); }
+  .card-tier { font-family:var(--font-m); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding-top:.45rem; }
+  .card h3 { font-family:var(--font-d); font-size:1.45rem; font-weight:500; color:var(--ink); line-height:1.15; margin-bottom:.5rem; }
+  .card-price { margin-bottom:1.1rem; display:flex; align-items:baseline; gap:.4rem; flex-wrap:wrap; }
+  .card-price strong { font-family:var(--font-d); font-size:1.95rem; font-weight:600; color:var(--ink); }
+  .card-price span { font-size:.82rem; color:var(--muted); }
+  .card-desc { font-size:.92rem; color:var(--muted); line-height:1.6; margin-bottom:1.4rem; }
+  .card-features { display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.7rem; flex:1; }
+  .card-features li { font-size:.88rem; color:var(--ink); display:flex; align-items:flex-start; gap:.6rem; }
+  .card-features li svg { color:var(--teal); flex-shrink:0; margin-top:3px; }
+  .card-cta { display:block; text-align:center; padding:.85rem; border-radius:var(--r-sm); font-weight:600; font-size:.9rem; transition:all .2s var(--ease); }
+  .card .card-cta { background:var(--sand-2); color:var(--ink); }
+  .card .card-cta:hover { background:var(--sand-3); }
+  .card.featured .card-cta { background:var(--teal); color:#fff; }
+  .card.featured .card-cta:hover { background:var(--teal-700); }
+
+  .horizon { height:1px; background:var(--line); max-width:1180px; margin:0 auto; }
+
+  /* why */
+  .why { padding:6rem 0; }
+  .two-col { display:grid; grid-template-columns:1.05fr 1fr; gap:4.5rem; align-items:center; }
+  .two-col.reverse { direction:rtl; }
+  .two-col.reverse > * { direction:ltr; }
+  .img-frame { position:relative; border-radius:var(--r); overflow:hidden; aspect-ratio:4/3.2; }
+  .img-frame img { width:100%; height:100%; object-fit:cover; transition:transform .7s var(--ease); }
+  .img-frame:hover img { transform:scale(1.05); }
+  .img-tag { position:absolute; left:1.1rem; bottom:1.1rem; background:rgba(6,50,46,.82); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); color:var(--sand); padding:.55rem 1rem; border-radius:50px; font-family:var(--font-m); font-size:.7rem; letter-spacing:.04em; display:flex; align-items:center; gap:.5rem; }
+  .img-tag b { color:var(--teal); }
+  .prose h2 { font-family:var(--font-d); font-size:clamp(1.95rem,3.6vw,2.7rem); font-weight:500; color:var(--ink); line-height:1.12; letter-spacing:-.015em; margin:1rem 0 1.1rem; }
+  .prose h2 em { font-style:italic; color:var(--teal-700); }
+  .prose p { color:var(--muted); font-size:1rem; line-height:1.75; margin-bottom:1rem; }
+  .facts { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem 1.4rem; margin-top:2rem; }
+  .fact { display:flex; align-items:flex-start; gap:.8rem; }
+  .fact-ico { width:38px; height:38px; flex-shrink:0; background:rgba(0,180,162,.10); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--teal-700); }
+  .fact p { font-size:.9rem; color:var(--ink); font-weight:500; margin:0; line-height:1.4; padding-top:.35rem; }
+
+  /* experience */
+  .experience { background:var(--ocean); padding:6.5rem 0; position:relative; overflow:hidden; }
+  .experience::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,180,162,.12), transparent 70%); pointer-events:none; }
+  .experience .section-head h2 { color:#fff; }
+  .experience .section-head h2 em { color:var(--teal); }
+  .experience .section-head p { color:var(--muted-d); }
+  .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem; position:relative; z-index:1; }
+  .step { padding:2.2rem 1.9rem; background:rgba(255,255,255,.035); border:1px solid var(--line-d); border-radius:var(--r); transition:transform .3s var(--ease), border-color .3s var(--ease); }
+  .step:hover { transform:translateY(-5px); border-color:rgba(0,180,162,.4); }
+  .step-n { font-family:var(--font-d); font-size:2.6rem; font-weight:500; color:var(--teal); line-height:1; margin-bottom:1.1rem; }
+  .step h3 { font-family:var(--font-d); font-size:1.3rem; font-weight:500; color:#fff; margin-bottom:.7rem; line-height:1.2; }
+  .step p { font-size:.92rem; color:var(--muted-d); line-height:1.65; }
+
+  /* included */
+  .included { padding:5rem 0; }
+  .inc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1.2rem; }
+  .inc-item { text-align:center; padding:1.8rem 1.1rem; background:var(--foam); border:1px solid var(--line); border-radius:var(--r-sm); }
+  .inc-ico { width:46px; height:46px; margin:0 auto .9rem; border-radius:12px; background:rgba(0,180,162,.10); display:flex; align-items:center; justify-content:center; color:var(--teal-700); }
+  .inc-item p { font-size:.9rem; font-weight:600; color:var(--ink); }
+
+  /* instructors */
+  .instructors { padding:6rem 0; background:var(--sand-2); }
+  .instructors .two-col { gap:4rem; }
+  .badges { display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1.8rem; }
+  .badge { display:inline-flex; align-items:center; gap:.45rem; background:var(--foam); border:1px solid var(--line); padding:.5rem 1rem; border-radius:50px; font-size:.8rem; font-weight:600; color:var(--ink); }
+  .badge svg { color:var(--teal); }
+
+  /* testimonials */
+  .testimonials { padding:6rem 0; }
+  .reviews { display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem; }
+  .review { background:var(--foam); border:1px solid var(--line); border-radius:var(--r); padding:1.9rem; display:flex; flex-direction:column; }
+  .stars { display:flex; gap:2px; margin-bottom:1.1rem; color:#FFC24B; font-size:.9rem; }
+  .review blockquote { font-family:var(--font-d); font-size:1.08rem; font-weight:400; color:var(--ink); line-height:1.5; margin-bottom:1.4rem; flex:1; }
+  .reviewer { display:flex; align-items:center; gap:.75rem; }
+  .av { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; color:#fff; flex-shrink:0; font-family:var(--font-m); }
+  .av.a1 { background:var(--ocean); }
+  .av.a2 { background:var(--teal-700); }
+  .av.a3 { background:var(--sun); }
+  .rev-name { font-weight:700; font-size:.88rem; color:var(--ink); }
+  .rev-origin { font-family:var(--font-m); font-size:.74rem; color:var(--muted); letter-spacing:.04em; }
+  .reviews-cta { text-align:center; margin-top:2.6rem; }
+
+  /* rentals banner */
+  .rentals { padding:0 0 6rem; }
+  .rentals-card { display:flex; align-items:center; justify-content:space-between; gap:2rem; flex-wrap:wrap;
+    background:linear-gradient(135deg, var(--ocean) 0%, var(--teal-700) 100%);
+    border-radius:var(--r); padding:2.6rem 2.8rem; box-shadow:var(--sh-lg); position:relative; overflow:hidden; }
+  .rentals-card::before { content:''; position:absolute; right:-10%; top:-60%; width:420px; height:420px; background:radial-gradient(circle, rgba(0,180,162,.25), transparent 65%); pointer-events:none; }
+  .rentals-text { position:relative; z-index:1; max-width:560px; }
+  .rentals-text h2 { font-family:var(--font-d); font-size:clamp(1.5rem,2.6vw,1.85rem); font-weight:500; color:#fff; line-height:1.15; margin-bottom:.5rem; }
+  .rentals-text p { color:rgba(247,242,234,.8); font-size:.98rem; line-height:1.6; }
+  .rentals-card .lp-btn { position:relative; z-index:1; flex-shrink:0; }
+
+  /* faq */
+  .faq { padding:6rem 0; background:var(--sand-2); }
+  .faq-wrap { max-width:800px; margin:0 auto; }
+  .faq-item { background:var(--foam); border:1px solid var(--line); border-radius:var(--r-sm); margin-bottom:.7rem; overflow:hidden; transition:box-shadow .25s var(--ease), border-color .25s var(--ease); }
+  .faq-item.open { box-shadow:var(--sh); border-color:rgba(0,180,162,.35); }
+  .faq-q { width:100%; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1.25rem 1.5rem; background:none; border:none; text-align:left; cursor:pointer; font-family:var(--font-b); font-size:1.0rem; font-weight:600; color:var(--ink); line-height:1.4; }
+  .faq-ico { width:26px; height:26px; flex-shrink:0; border-radius:50%; background:var(--sand-2); display:flex; align-items:center; justify-content:center; color:var(--ink); transition:transform .3s var(--ease), background .25s, color .25s; font-size:1.25rem; line-height:1; }
+  .faq-item.open .faq-ico { transform:rotate(45deg); background:var(--teal); color:#fff; }
+  .faq-a { max-height:0; overflow:hidden; transition:max-height .42s var(--ease); }
+  .faq-inner { padding:0 1.5rem 1.4rem; font-size:.94rem; color:var(--muted); line-height:1.75; border-top:1px solid var(--line); }
+  .faq-inner p { margin-top:.85rem; }
+
+  /* cta */
+  .cta { background:var(--ocean); padding:7rem 0; text-align:center; position:relative; overflow:hidden; }
+  .cta::before { content:''; position:absolute; top:-45%; left:50%; transform:translateX(-50%); width:900px; height:900px; background:radial-gradient(circle, rgba(0,180,162,.14) 0%, transparent 62%); pointer-events:none; }
+  .cta-content { position:relative; z-index:1; max-width:640px; margin:0 auto; }
+  .cta-content h2 { font-family:var(--font-d); font-size:clamp(2.3rem,5.4vw,3.7rem); font-weight:500; color:#fff; line-height:1.08; letter-spacing:-.02em; margin:1rem 0 1.1rem; }
+  .cta-content h2 em { font-style:italic; color:var(--teal); }
+  .cta-content p { color:var(--muted-d); font-size:1.06rem; margin:0 auto 2.3rem; line-height:1.65; }
+  .cta-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+  .cta-note { margin-top:1.5rem; font-family:var(--font-m); font-size:.72rem; letter-spacing:.04em; color:rgba(247,242,234,.4); }
+
+  /* reveal */
+  .reveal { opacity:0; transform:translateY(26px); transition:opacity .7s var(--ease), transform .7s var(--ease); }
+  .reveal.in { opacity:1; transform:none; }
+
+  /* responsive */
+  @media (max-width:1024px) {
+    .cards { grid-template-columns:repeat(2,1fr); }
+    .two-col { grid-template-columns:1fr; gap:2.8rem; }
+    .two-col.reverse { direction:ltr; }
+    .steps { grid-template-columns:1fr; }
+    .inc-grid { grid-template-columns:repeat(2,1fr); }
+    .reviews { grid-template-columns:1fr; max-width:520px; margin:0 auto; }
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .stat + .stat::before { display:none; }
+  }
+  @media (max-width:768px) {
+    .lpw, .hero-inner { padding-left:1.25rem; padding-right:1.25rem; }
+    .hero-ctas { flex-direction:column; align-items:flex-start; }
+    .hero-rating { margin:.4rem 0 0; }
+    .facts { grid-template-columns:1fr; }
+    .hero-conditions { gap:.8rem 1rem; }
+    .cards { grid-template-columns:1fr; max-width:420px; margin:0 auto; }
+    .cta-btns { flex-direction:column; align-items:stretch; }
+    .rentals-card { flex-direction:column; align-items:flex-start; gap:1.5rem; padding:2rem 1.6rem; }
+  }
+  @media (max-width:480px) {
+    .lessons,.why,.instructors,.testimonials,.faq,.experience,.included { padding:4rem 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp *, .lp *::before, .lp *::after { animation:none !important; transition:none !important; }
+    .reveal { opacity:1; transform:none; }
+  }
+</style>
+
+<script>
+  // reveal on scroll
+  const io = new IntersectionObserver((es) => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+  }), { threshold: .12 })
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    ;(el as HTMLElement).style.transitionDelay = (i % 3 * 0.08) + 's'
+    io.observe(el)
+  })
+
+  // faq accordion
+  document.querySelectorAll<HTMLButtonElement>('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item') as HTMLElement
+      const a = item.querySelector('.faq-a') as HTMLElement
+      const isOpen = item.classList.contains('open')
+      document.querySelectorAll('.faq-item').forEach(i => {
+        i.classList.remove('open')
+        ;(i.querySelector('.faq-a') as HTMLElement).style.maxHeight = '0'
+      })
+      if (!isOpen) { item.classList.add('open'); a.style.maxHeight = a.scrollHeight + 'px' }
+    })
+  })
+</script>

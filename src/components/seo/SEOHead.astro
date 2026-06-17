@@ -1,0 +1,70 @@
+---
+export interface Props {
+  title: string
+  description: string
+  slug: string
+  keyfocus?: string
+  image?: string
+  noindex?: boolean
+  type?: string
+  synonyms?: string[]
+}
+const { title, description, slug, keyfocus, image = '/images/hero-home.jpg', noindex = false, type = 'website', synonyms = [] } = Astro.props
+const site = 'https://outsidersurfacademy.com'
+const canonical = slug === '/' ? site : `${site}${slug}`
+const ogImage = `${site}${image}`
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': ['LocalBusiness', 'SportsActivityLocation'],
+      sport: 'Surfing',
+      '@id': `${site}/#business`,
+      name: 'Outsider Surf Academy',
+      description: 'Surf school in Tamarindo, Costa Rica offering private, semi-private, group and kids surf lessons, plus surfboard rentals. All equipment included.',
+      url: site,
+      telephone: '+50686135937',
+      email: 'info@outsidercustoms.com',
+      image: ogImage,
+      logo: `${site}/images/logo-schema.png`,
+      priceRange: '$50-$240',
+      currenciesAccepted: 'USD, CRC',
+      address: { '@type': 'PostalAddress', streetAddress: 'C. Cardinal 100', addressLocality: 'Tamarindo', addressRegion: 'Guanacaste', postalCode: '50309', addressCountry: 'CR' },
+      geo: { '@type': 'GeoCoordinates', latitude: 10.2993, longitude: -85.8400 },
+      areaServed: 'Tamarindo, Guanacaste, Costa Rica',
+      sameAs: [
+        'https://www.instagram.com/outsider.surf',
+      ],
+      openingHoursSpecification: [{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], opens: '08:00', closes: '17:00' }],
+      aggregateRating: { '@type': 'AggregateRating', ratingValue: '5.0', reviewCount: '1', bestRating: '5', worstRating: '1' },
+    },
+    { '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: title, description, ...(keyfocus || synonyms.length > 0 ? { keywords: [keyfocus, ...synonyms].filter(Boolean).join(', ') } : {}), isPartOf: { '@id': `${site}/#website` }, inLanguage: 'en' },
+    {
+      '@type': 'WebSite',
+      '@id': `${site}/#website`,
+      url: site,
+      name: 'Outsider Surf Academy',
+      inLanguage: 'en',
+    },
+  ],
+}
+---
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex,nofollow" />}
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={title} />
+<meta property="og:locale" content="en_US" />
+<meta property="og:site_name" content="Outsider Surf Academy" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

@@ -1,0 +1,344 @@
+---
+import { Image } from 'astro:assets'
+import privateImg  from '../../assets/images/surf-school-cocoa-beach-private-lesson.webp'
+import groupImg    from '../../assets/images/group-surf-lessons-cocoa-beach-students-beach.webp'
+import coachingImg from '../../assets/images/one-on-one-surf-lessons-cocoa-beach-coaching.webp'
+
+export interface Props {
+  bookHref?: string
+}
+const { bookHref = '/book-now' } = Astro.props
+
+const lessons = [
+  {
+    img: privateImg,
+    imgAlt: 'Private surf lesson Cocoa Beach — one instructor, one student',
+    badge: 'Fastest Progression',
+    title: 'Private Surf Lessons',
+    description: 'One instructor, one focus: you. The fastest progression and the most personalized feedback — ideal for individuals, couples, and families.',
+    price: 'From $75',
+    priceUnit: '/ person',
+    priceNote: null,
+    detailHref: '/private-surf-lessons-cocoa-beach',
+    cta: { label: 'Book now', href: bookHref },
+  },
+  {
+    img: groupImg,
+    imgAlt: 'Group surf lessons Cocoa Beach — fun social sessions',
+    badge: 'Fun & Social',
+    title: 'Group Surf Lessons',
+    description: 'The fun, social way in. Learn alongside others with hands-on attention, thanks to our small-group ratio. Perfect for friends and solo travelers.',
+    price: '$60',
+    priceUnit: '/ person',
+    priceNote: 'min. 4 people',
+    detailHref: '/group-surf-lessons-cocoa-beach',
+    cta: { label: 'Book now', href: bookHref },
+  },
+  {
+    img: coachingImg,
+    imgAlt: 'Surf coaching Cocoa Beach — intermediate and advanced surfers',
+    badge: 'Intermediate & Advanced',
+    title: 'Surf Coaching',
+    description: 'Already riding? Coaching sharpens technique, positioning, timing, and wave selection with real wave-by-wave feedback in real conditions.',
+    price: 'From $75',
+    priceUnit: '/ person',
+    priceNote: null,
+    detailHref: '/surf-coaching-cocoa-beach',
+    cta: { label: 'Book now', href: bookHref },
+  },
+]
+---
+
+<section class="lg-section">
+  <div class="lg-wrap">
+
+    <!-- Header -->
+    <div class="lg-header">
+      <span class="lg-eyebrow">Our Lessons</span>
+      <h2 class="lg-title">
+        Surf Lessons in<br/>
+        <em>Cocoa Beach</em>
+      </h2>
+      <p class="lg-subtitle">
+        Three ways to learn, built around your goals.
+        All include full gear and the same step-by-step method.
+      </p>
+    </div>
+
+    <!-- Cards grid -->
+    <div class="lg-grid">
+      {lessons.map(l => (
+        <article class="lg-card">
+
+          <!-- Image with price overlay -->
+          <div class="lg-img-wrap">
+            <Image
+              src={l.img}
+              alt={l.imgAlt}
+              class="lg-img"
+              widths={[480, 720, 960]}
+              sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 90vw"
+              loading="lazy"
+              decoding="async"
+            />
+            <!-- Price overlay at bottom of image -->
+            <div class="lg-price-overlay">
+              <span class="lg-price-amount">{l.price}</span>
+              <span class="lg-price-unit">{l.priceUnit}</span>
+              {l.priceNote && <span class="lg-price-note">{l.priceNote}</span>}
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="lg-body">
+            <span class="lg-badge">{l.badge}</span>
+            <h3 class="lg-card-title">{l.title}</h3>
+            <p class="lg-desc">{l.description}</p>
+          </div>
+
+          <!-- CTAs -->
+          <div class="lg-footer">
+            <a href={l.cta.href} class="lg-cta-primary">
+              {l.cta.label}
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href={l.detailHref} class="lg-cta-secondary">
+              See details
+            </a>
+          </div>
+
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ── Variables ─────────────────────────────────────────── */
+  .lg-section {
+    --deep:       var(--c-ink);
+    --brand:      var(--teal-primary);
+    --brand-dark: var(--teal-dark);
+    --brand-text: var(--teal-text);
+    --coral:      var(--c-sunrise);       /* decorative only (non-text) */
+    --coral-text: var(--c-sunrise-ink);   /* sunrise text on light — AA 5.2:1 */
+    --gray:       var(--c-muted);
+    --line:       rgba(0,188,212,.12);
+    --maxw:       1180px;
+
+    padding: 84px 0 96px;
+    background: #fff;
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  }
+
+  /* ── Layout ────────────────────────────────────────────── */
+  .lg-wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+  /* ── Header ────────────────────────────────────────────── */
+  .lg-header { max-width: 600px; margin-bottom: 52px; }
+
+  .lg-eyebrow {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .2em;
+    color: var(--coral-text);
+    margin-bottom: 14px;
+  }
+
+  .lg-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-weight: 600;
+    line-height: 1.08;
+    color: var(--deep);
+    margin-bottom: 18px;
+  }
+  .lg-title em { font-style: italic; color: var(--brand-text); }
+
+  .lg-subtitle {
+    font-size: 1.05rem;
+    color: var(--gray);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* ── Grid ──────────────────────────────────────────────── */
+  .lg-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+
+  /* ── Card ──────────────────────────────────────────────── */
+  .lg-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: #fff;
+    box-shadow: 0 2px 16px -6px rgba(10,58,64,.10);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .lg-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 48px -12px rgba(10,58,64,.20);
+  }
+
+  /* ── Image with overlay ────────────────────────────────── */
+  .lg-img-wrap {
+    position: relative;
+    height: 240px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .lg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .5s ease;
+    display: block;
+  }
+  .lg-card:hover .lg-img { transform: scale(1.06); }
+
+  /* Price overlay at bottom of image */
+  .lg-price-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(10,58,64,.92) 0%, rgba(10,58,64,.6) 60%, transparent 100%);
+    padding: 32px 20px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .lg-price-amount {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #FFD79A;
+    line-height: 1;
+  }
+  .lg-price-unit {
+    font-size: .82rem;
+    color: rgba(255,255,255,.80);
+    font-weight: 500;
+  }
+  .lg-price-note {
+    font-size: .72rem;
+    color: rgba(255,255,255,.60);
+    font-weight: 500;
+    width: 100%;
+    margin-top: -2px;
+  }
+
+  /* ── Body ──────────────────────────────────────────────── */
+  .lg-body {
+    padding: 24px 24px 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lg-badge {
+    display: inline-block;
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    color: var(--coral-text);
+    margin-bottom: 8px;
+  }
+
+  .lg-card-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--deep);
+    margin-bottom: 12px;
+  }
+
+  .lg-desc {
+    font-size: .93rem;
+    color: var(--gray);
+    line-height: 1.7;
+    margin: 0;
+    flex: 1;
+  }
+
+  /* ── Footer / CTAs ─────────────────────────────────────── */
+  .lg-footer {
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lg-cta-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 13px 20px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: .01em;
+    box-shadow: 0 4px 16px rgba(0,188,212,.30);
+    transition: box-shadow .2s ease, gap .2s ease, transform .15s ease-out;
+  }
+  .lg-cta-primary:hover {
+    gap: 12px;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,188,212,.42);
+  }
+  .lg-cta-primary:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+  .lg-cta-primary svg { flex-shrink: 0; }
+
+  .lg-cta-secondary {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 20px;
+    border-radius: 50px;
+    border: 1.5px solid rgba(0,188,212,.25);
+    background: transparent;
+    color: var(--brand-text);
+    font-size: .88rem;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: border-color .2s ease, color .2s ease, background .2s ease;
+  }
+  .lg-cta-secondary:hover {
+    border-color: var(--brand);
+    color: var(--brand-text);
+    background: rgba(0,188,212,.06);
+  }
+  .lg-cta-secondary:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+
+  /* ── Responsive ────────────────────────────────────────── */
+  @media (max-width: 960px) {
+    .lg-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+  }
+  @media (max-width: 600px) {
+    .lg-section { padding: 60px 0 72px; }
+    .lg-wrap { padding: 0 20px; }
+    .lg-grid { grid-template-columns: 1fr; }
+    .lg-img-wrap { height: 220px; }
+  }
+</style>

@@ -1,0 +1,130 @@
+---
+import { ROUTES } from '../../lib/seo'
+const year = new Date().getFullYear()
+const WHATSAPP = '50686135937'
+const EMAIL = 'info@outsidercustoms.com'
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+
+    <!-- top: brand + newsletter -->
+    <div class="footer-head">
+      <div class="footer-intro">
+        <a href="/" class="footer-logo">
+          <span class="mark"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2-4 6-7 10-7s8 3 10 7"/><path d="M2 16c2-4 6-7 10-7s8 3 10 7"/></svg></span>
+          Outsider Surf Academy
+        </a>
+        <p class="footer-tagline">Learn to surf where the locals do — warm water, a soft sandy bottom, and small groups capped at 4. Tamarindo, Guanacaste, Costa Rica.</p>
+        <div class="footer-socials">
+          <a href="https://www.instagram.com/outsider.surf" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5.5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5h1.65V3.6c-.3 0-1.3-.1-2.45-.1-2.4 0-4.05 1.47-4.05 4.18V9.9H7.5V13h2.75v8z"/></svg></a>
+          <a href={`https://wa.me/${WHATSAPP}`} aria-label="WhatsApp" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.6 5.6.6 11.9c0 2.1.55 4.1 1.6 5.9L.4 23.5l5.9-1.55c1.75.95 3.7 1.45 5.7 1.45 6.3 0 11.4-5.1 11.4-11.4S18.3.5 12 .5Zm0 20.8c-1.8 0-3.5-.48-5-1.4l-.36-.2-3.5.92.93-3.4-.23-.36a9.3 9.3 0 0 1-1.44-5C2.9 6.85 6.9 2.85 12 2.85S21.1 6.85 21.1 11.95 17.1 21.3 12 21.3Zm5.2-6.95c-.28-.14-1.67-.82-1.93-.92-.26-.1-.45-.14-.64.14-.19.28-.73.92-.9 1.1-.16.2-.33.21-.6.07-.28-.14-1.2-.44-2.27-1.4-.84-.75-1.4-1.67-1.57-1.95-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.5.14-.16.18-.28.28-.47.09-.19.05-.35-.02-.5-.07-.14-.64-1.53-.87-2.1-.23-.55-.46-.48-.64-.49h-.55c-.19 0-.5.07-.76.35-.26.28-1 .98-1 2.4s1.02 2.78 1.16 2.97c.14.19 2 3.05 4.85 4.28.68.3 1.2.47 1.62.6.68.22 1.3.19 1.78.11.54-.08 1.67-.68 1.9-1.34.24-.66.24-1.22.16-1.34-.07-.12-.26-.19-.54-.33Z"/></svg></a>
+          <a href="#" aria-label="TripAdvisor"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.7" cy="13" r="3.4"/><circle cx="17.3" cy="13" r="3.4"/><circle cx="6.7" cy="13" r=".5" fill="currentColor"/><circle cx="17.3" cy="13" r=".5" fill="currentColor"/><path d="M9.6 10.4C10.3 8.9 11 8.3 12 8.3s1.7.6 2.4 2.1"/><path d="M3.3 10C5 8.4 8.4 7.6 12 7.6s7 .8 8.7 2.4"/></svg></a>
+        </div>
+      </div>
+
+      <div class="footer-news">
+        <span class="news-label">Surf tips &amp; seasonal deals,<br>straight to your inbox.</span>
+        <form class="news-form" onsubmit="return false">
+          <input type="email" aria-label="Your email address" placeholder="you@email.com" autocomplete="email" />
+          <button type="submit" aria-label="Subscribe">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+        <p class="news-note">No spam — just swell. Unsubscribe anytime.</p>
+      </div>
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <!-- columns -->
+    <div class="footer-grid">
+      <nav class="footer-col" aria-label="Lessons">
+        <h4>Lessons</h4>
+        <a class="fl" href={ROUTES.PRIVATE}>Private Lessons</a>
+        <a class="fl" href={ROUTES.SEMI_PRIVATE}>Semi-Private</a>
+        <a class="fl" href={ROUTES.GROUP}>Group Lessons</a>
+        <a class="fl" href={ROUTES.KIDS}>Kids &amp; Family</a>
+        <a class="fl" href={ROUTES.RENTALS}>Surfboard Rentals</a>
+      </nav>
+      <nav class="footer-col" aria-label="Company">
+        <h4>Company</h4>
+        <a class="fl" href={ROUTES.ABOUT}>About Us</a>
+        <a class="fl" href={ROUTES.CONTACT}>Contact</a>
+        <a class="fl" href={ROUTES.BLOG}>Surf Blog</a>
+        <a class="fl" href="/#faq">FAQ</a>
+      </nav>
+      <div class="footer-col">
+        <h4>Visit us</h4>
+        <div class="ci"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg> C. Cardinal 100, Tamarindo, Guanacaste, Costa Rica</div>
+        <a class="ci" href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg> WhatsApp us</a>
+        <a class="ci" href={`mailto:${EMAIL}`}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 6 9-6"/></svg> {EMAIL}</a>
+        <div class="ci"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Open daily · 8 am – 5 pm</div>
+      </div>
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <!-- bottom -->
+    <div class="footer-bottom">
+      <span class="footer-copy">© {year} Outsider Surf Academy · Made on the Pacific coast · <b>Pura Vida</b></span>
+      <nav class="footer-legal" aria-label="Legal">
+        <a href="/privacy-policy">Privacy</a>
+        <a href="/terms-of-use">Terms</a>
+        <a href="/sitemap-index.xml">Sitemap</a>
+      </nav>
+    </div>
+
+  </div>
+</footer>
+
+<style>
+  .site-footer { background: #052824; color: rgba(247,242,234,.62); padding: 4.5rem 0 2.2rem; position: relative; }
+  .site-footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,180,162,.55), transparent); }
+  .site-footer .wrap { max-width: 1180px; }
+
+  .footer-head { display: grid; grid-template-columns: 1.5fr 1fr; gap: 3.5rem; align-items: start; }
+  .footer-logo { font-family: var(--font-display); font-size: 1.42rem; font-weight: 600; color: #fff; display: inline-flex; align-items: center; gap: .6rem; letter-spacing: -.01em; }
+  .footer-logo .mark { width: 32px; height: 32px; border-radius: 9px; background: var(--teal); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .footer-tagline { margin: 1.15rem 0 1.5rem; font-size: .95rem; line-height: 1.65; max-width: 400px; }
+  .footer-socials { display: flex; gap: .6rem; }
+  .footer-socials a { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(247,242,234,.16); display: flex; align-items: center; justify-content: center; color: rgba(247,242,234,.62); transition: background .25s, border-color .25s, color .25s, transform .25s; }
+  .footer-socials a:hover { background: var(--teal); border-color: var(--teal); color: #fff; transform: translateY(-3px); }
+
+  .news-label { font-family: var(--font-display); font-size: 1.18rem; font-weight: 500; color: #fff; display: block; margin-bottom: 1rem; line-height: 1.3; }
+  .news-form { display: flex; gap: .4rem; background: rgba(255,255,255,.05); border: 1px solid rgba(247,242,234,.16); border-radius: 50px; padding: .32rem .32rem .32rem 1.15rem; transition: border-color .25s; }
+  .news-form:focus-within { border-color: var(--teal); }
+  .news-form input { flex: 1; min-width: 0; background: none; border: none; color: #fff; font-family: var(--font-body); font-size: .92rem; outline: none; }
+  .news-form input::placeholder { color: rgba(247,242,234,.42); }
+  .news-form button { width: 40px; height: 40px; flex-shrink: 0; border: none; border-radius: 50%; background: var(--teal); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .25s, transform .25s; }
+  .news-form button:hover { background: var(--teal-deep); transform: translateX(3px); }
+  .news-note { margin-top: .75rem; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .04em; color: rgba(247,242,234,.42); }
+
+  .footer-divider { height: 1px; background: rgba(247,242,234,.16); margin: 2.8rem 0; }
+
+  .footer-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 2.5rem; }
+  .footer-col h4 { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--teal); margin-bottom: 1.15rem; font-weight: 400; }
+  .footer-col a.fl { display: block; font-size: .93rem; color: rgba(247,242,234,.62); margin-bottom: .72rem; transition: color .2s, transform .2s; width: fit-content; }
+  .footer-col a.fl:hover { color: #fff; transform: translateX(4px); }
+  .ci { display: flex; align-items: flex-start; gap: .7rem; margin-bottom: .95rem; font-size: .93rem; color: rgba(247,242,234,.62); line-height: 1.4; }
+  .ci svg { color: var(--teal); flex-shrink: 0; margin-top: 2px; }
+  a.ci { transition: color .2s; }
+  a.ci:hover { color: #fff; }
+
+  .footer-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .footer-copy { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .05em; color: rgba(247,242,234,.42); }
+  .footer-copy b { color: var(--teal); font-weight: 400; }
+  .footer-legal { display: flex; gap: 1.6rem; }
+  .footer-legal a { font-size: .82rem; color: rgba(247,242,234,.62); transition: color .2s; }
+  .footer-legal a:hover { color: #fff; }
+
+  @media (max-width: 768px) {
+    .footer-head { grid-template-columns: 1fr; gap: 2.5rem; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .footer-bottom { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 480px) {
+    .footer-grid { grid-template-columns: 1fr; gap: 1.8rem; }
+  }
+</style>

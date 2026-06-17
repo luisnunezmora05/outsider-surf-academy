@@ -1,0 +1,104 @@
+---
+// Reusable SEO service-page template for Outsider Surf Academy.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import FAQSchema from '../seo/FAQSchema.astro'
+import { ROUTES } from '../../lib/seo'
+
+export interface Bullet { b: string; p: string }
+export interface Faq { question: string; answer: string }
+
+export interface Props {
+  seo: { title: string; description: string; slug: string; keyfocus?: string; image?: string; synonyms?: string[] }
+  eyebrow: string
+  h1: string
+  intro: string
+  price?: string
+  priceUnit?: string
+  heroPh?: string        // gradient classes for the hero placeholder block
+  highlights: Bullet[]
+  includes: string[]
+  faqs?: Faq[]
+  ctaLabel?: string
+}
+
+const {
+  seo, eyebrow, h1, intro, price, priceUnit = '/ person',
+  heroPh = 'from-teal to-teal-light', highlights, includes, faqs = [], ctaLabel = 'Check Availability',
+} = Astro.props
+---
+
+<BaseLayout title={seo.title} description={seo.description} slug={seo.slug} keyfocus={seo.keyfocus} image={seo.image} synonyms={seo.synonyms}>
+  {faqs.length > 0 && <FAQSchema slot="head" items={faqs} />}
+
+  <!-- ── HERO ──────────────────────────────────────────────────────────────── -->
+  <section class="section pb-12">
+    <div class="wrap grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <span class="eyebrow">{eyebrow}</span>
+        <h1 class="font-display font-semibold" style="font-size:clamp(2rem,4.4vw,3rem)">{h1}</h1>
+        <p class="lead mt-5 text-[1.05rem]">{intro}</p>
+        {price && <div class="font-display text-[1.6rem] text-teal-deep mt-6">{price} <small class="font-sans text-[.85rem] text-ink-soft font-semibold">{priceUnit}</small></div>}
+        <div class="flex gap-4 flex-wrap mt-6">
+          <a href={ROUTES.BOOK} class="btn btn-sun">{ctaLabel}</a>
+          <a href={ROUTES.CONTACT} class="btn btn-ghost">Ask on WhatsApp</a>
+        </div>
+      </div>
+      <div class={`rounded-brand shadow-brand h-[320px] flex items-end p-6 text-white font-semibold bg-gradient-to-br ${heroPh}`}>
+        [Foto: {eyebrow.toLowerCase()} en Tamarindo]
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HIGHLIGHTS ────────────────────────────────────────────────────────── -->
+  <section class="section pt-0">
+    <div class="wrap grid grid-cols-1 md:grid-cols-3 gap-[26px]">
+      {highlights.map(h => (
+        <div class="surface p-7">
+          <h3 class="text-[1.08rem] text-teal-deep mb-2.5">{h.b}</h3>
+          <p class="text-[.95rem] text-ink-soft">{h.p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── INCLUDES ──────────────────────────────────────────────────────────── -->
+  <section class="section pt-0">
+    <div class="wrap">
+      <div class="surface p-[30px_34px] bg-foam">
+        <h2 class="text-[1.4rem] mb-4">What’s included</h2>
+        <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5 list-none">
+          {includes.map(i => (
+            <li class="relative pl-7 text-[.96rem] text-ink-soft font-medium before:content-['✓'] before:absolute before:left-0 before:text-sun before:font-extrabold">{i}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ───────────────────────────────────────────────────────────────── -->
+  {faqs.length > 0 && (
+    <section class="section pt-0 faq">
+      <div class="wrap" style="max-width:840px">
+        <span class="eyebrow">FAQ</span>
+        <h2>Common questions</h2>
+        <div class="mt-8">
+          {faqs.map(f => (<details><summary>{f.question}</summary><p>{f.answer}</p></details>))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── FINAL CTA ─────────────────────────────────────────────────────────── -->
+  <section class="section pt-0">
+    <div class="wrap">
+      <div class="text-white text-center rounded-brand p-[64px_30px] shadow-brand" style="background:linear-gradient(150deg,#0A4A54,#13707E)">
+        <h2 class="text-white mb-3.5">Ready to surf in Tamarindo?</h2>
+        <p class="text-white/85 max-w-lg mx-auto mb-7">Book online in two minutes or message us on WhatsApp — we reply fast.</p>
+        <div class="flex gap-4 justify-center flex-wrap">
+          <a href={ROUTES.BOOK} class="btn btn-sun">Book Now</a>
+          <a href={ROUTES.CONTACT} class="btn btn-white">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,358 @@
+---
+export interface Step {
+  title: string
+  description: string
+}
+export interface Card {
+  icon: string
+  title: string
+  description: string
+  extras?: { label: string }[]
+}
+
+const iconMap: Record<string, string> = {
+  compass: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+  shield:  `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  package: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+}
+export interface Props {
+  eyebrow?: string
+  title?: string
+  subtitle?: string
+  methodEyebrow?: string
+  methodTitle?: string
+  asideTitle?: string
+  asideBody?: string
+  asideRatio?: string
+  asideRatioLabel?: string
+  steps?: Step[]
+  cards?: Card[]
+}
+
+const {
+  eyebrow        = 'Why Choose Us',
+  title          = 'Why Choose Our Cocoa Beach Surf School',
+  subtitle       = 'At Cocosol Surf Lessons, we\'ve taught surf lessons in Cocoa Beach for more than 25 years — turning thousands of nervous first-timers into confident surfers. Here\'s what sets our school apart.',
+  methodEyebrow  = 'Safety First',
+  methodTitle    = 'Our Step-by-Step Method',
+  asideTitle     = 'Why beginners feel safe here',
+  asideBody      = 'Cocoa Beach\'s sandy bottom and consistent, beginner-friendly waves make it one of the safest places in Florida to learn. We keep groups small, so you\'re never left to figure it out alone.',
+  asideRatio     = '3:1',
+  asideRatioLabel = 'students to instructor — or fully private if you prefer',
+  steps = [
+    { title: 'Safety briefing on the sand',   description: 'Ocean awareness, how to fall safely, and what to expect from the day\'s conditions.' },
+    { title: 'Paddling & positioning',         description: 'Getting comfortable on the board and learning to read incoming waves.' },
+    { title: 'The pop-up',                     description: 'Practicing your stand-up on land first, then taking it into the water.' },
+    { title: 'Your first ride',                description: 'Catching and riding a wave with your instructor right beside you.' },
+  ],
+  cards = [
+    {
+      icon: 'compass',
+      title: 'Certified, Bilingual Local Instructors',
+      description: 'Our instructors are certified, fluent in English and Spanish, and — most importantly — local. They read Cocoa Beach\'s conditions every single day and shape each session around the real ocean in front of you, not a one-size-fits-all script.',
+    },
+    {
+      icon: 'shield',
+      title: 'Safety Built Into Everything',
+      description: 'Every session starts with a beach safety briefing, and an instructor stays in the water with you the whole time. That local knowledge is the difference between a fun afternoon and actually learning to surf.',
+    },
+    {
+      icon: 'package',
+      title: 'Premium Gear, Always Included',
+      description: 'No rentals, no surprise fees. We match your board to your height, weight, and skill level — because the right equipment is half of learning fast.',
+      extras: [
+        { label: '✓ Premium board' },
+        { label: '✓ Quality leash' },
+        { label: '✓ UV rash guard' },
+        { label: '✓ Surf wax' },
+        { label: '✓ Reef-safe sunscreen' },
+        { label: '✓ Safety briefing' },
+      ],
+    },
+  ],
+} = Astro.props
+---
+
+<section class="wcu-section">
+  <div class="wcu-wrap">
+
+    <!-- Header -->
+    <div class="wcu-head">
+      <span class="wcu-eyebrow">{eyebrow}</span>
+      <h2 class="wcu-title">{title}</h2>
+      <p class="wcu-subtitle">{subtitle}</p>
+    </div>
+
+    <!-- Method: steps + aside -->
+    <div class="wcu-method">
+      <div>
+        <span class="wcu-eyebrow">{methodEyebrow}</span>
+        <h2 class="wcu-method-title">{methodTitle}</h2>
+        <ol class="wcu-steps">
+          {steps.map(s => (
+            <li>
+              <strong>{s.title}</strong>
+              <span>{s.description}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="wcu-aside">
+        <h3>{asideTitle}</h3>
+        <p>{asideBody}</p>
+        <div class="wcu-ratio">
+          <b>{asideRatio}</b>
+          <span>{asideRatioLabel}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="wcu-cards">
+      {cards.map(c => (
+        <div class="wcu-card">
+          <div class="wcu-ico" set:html={iconMap[c.icon] ?? c.icon}></div>
+          <h3>{c.title}</h3>
+          <p>{c.description}</p>
+          {c.extras && (
+            <div class="wcu-gear">
+              {c.extras.map(e => <div class="wcu-g">{e.label}</div>)}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  /* ── Variables ────────────────────────────────────────────────────── */
+  .wcu-section {
+    --deep:      var(--c-ink);
+    --brand:     var(--teal-primary);
+    --brand-dark:var(--teal-dark);
+    --brand-text:var(--teal-text);
+    --brand-strong:var(--teal-text-strong);   /* teal text on tinted bg — AA 7:1 */
+    --aqua:      #26C6DA;
+    --cream:     var(--c-cream-cool);
+    --sand-2:    var(--c-paper-cool);
+    --sun:       var(--c-gold);
+    --coral:     var(--c-sunrise);
+    --line:      rgba(0,188,212,.12);
+    --shadow-sm: 0 8px 22px -12px rgba(0,188,212,.15);
+    --shadow:    0 18px 40px -18px rgba(0,188,212,.20);
+    --radius:    18px;
+    --maxw:      1180px;
+
+    padding: 84px 0;
+    background: var(--sand-2);
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+    color: var(--deep);
+    line-height: 1.65;
+  }
+
+  /* ── Layout ───────────────────────────────────────────────────────── */
+  .wcu-wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* ── Eyebrow ──────────────────────────────────────────────────────── */
+  .wcu-eyebrow {
+    display: inline-block;
+    font-family: 'Hanken Grotesk', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    font-size: .74rem;
+    font-weight: 700;
+    color: var(--brand-strong);
+    margin-bottom: 14px;
+  }
+
+  /* ── Header ───────────────────────────────────────────────────────── */
+  .wcu-head {
+    max-width: 720px;
+    margin: 0 auto 56px;
+    text-align: center;
+  }
+  .wcu-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(1.9rem, 4vw, 2.85rem);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -.01em;
+    color: var(--deep);
+    margin-bottom: 16px;
+  }
+  .wcu-subtitle {
+    color: var(--c-muted-soft);
+    font-size: 1.08rem;
+    margin: 0;
+  }
+
+  /* ── Method grid ──────────────────────────────────────────────────── */
+  .wcu-method {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 54px;
+    align-items: center;
+    margin-bottom: 64px;
+  }
+  .wcu-method-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+    font-weight: 600;
+    line-height: 1.12;
+    color: var(--deep);
+    margin-bottom: 28px;
+  }
+
+  /* ── Steps ────────────────────────────────────────────────────────── */
+  .wcu-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: step;
+  }
+  .wcu-steps li {
+    position: relative;
+    padding: 0 0 28px 64px;
+    counter-increment: step;
+  }
+  .wcu-steps li:last-child { padding-bottom: 0; }
+  .wcu-steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: -2px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(140deg, var(--brand), var(--brand-dark));
+    color: #fff;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 16px -8px rgba(0,188,212,.50);
+  }
+  .wcu-steps li::after {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 44px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--line);
+  }
+  .wcu-steps li:last-child::after { display: none; }
+  .wcu-steps strong {
+    display: block;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.08rem;
+    color: var(--deep);
+    margin-bottom: 4px;
+  }
+  .wcu-steps span { color: var(--c-muted-soft); font-size: .96rem; }
+
+  /* ── Aside ────────────────────────────────────────────────────────── */
+  .wcu-aside {
+    background: linear-gradient(160deg, var(--brand-dark), var(--deep));
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 40px 36px;
+    box-shadow: var(--shadow);
+  }
+  .wcu-aside h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+  .wcu-aside p { color: rgba(255,255,255,.9); font-size: 1rem; margin: 0; }
+  .wcu-ratio {
+    margin-top: 22px;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    background: rgba(255,255,255,.12);
+    padding: 14px 22px;
+    border-radius: 14px;
+  }
+  .wcu-ratio b {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 2rem;
+    color: #FFD79A;
+    font-weight: 600;
+  }
+  .wcu-ratio span { color: rgba(255,255,255,.85); font-size: .95rem; }
+
+  /* ── Cards ────────────────────────────────────────────────────────── */
+  .wcu-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .wcu-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    box-shadow: var(--shadow-sm);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .wcu-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
+  .wcu-ico {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 18px;
+    background: linear-gradient(140deg, var(--brand), var(--brand-dark));
+    color: #fff;
+  }
+  .wcu-card h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.22rem;
+    line-height: 1.2;
+    color: var(--deep);
+    margin-bottom: 10px;
+  }
+  .wcu-card p { color: var(--c-muted-soft); font-size: .97rem; margin: 0; }
+
+  /* ── Gear extras ──────────────────────────────────────────────────── */
+  .wcu-gear {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .wcu-g {
+    background: var(--sand-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 10px;
+    font-weight: 600;
+    font-size: .88rem;
+    color: var(--deep);
+    text-align: center;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────────── */
+  @media (max-width: 960px) {
+    .wcu-method { grid-template-columns: 1fr; gap: 36px; }
+  }
+  @media (max-width: 820px) {
+    .wcu-section { padding: 60px 0; }
+    .wcu-cards { grid-template-columns: 1fr; }
+    .wcu-gear { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .wcu-aside { padding: 30px 24px; }
+  }
+</style>

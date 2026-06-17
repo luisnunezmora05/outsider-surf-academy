@@ -1,0 +1,367 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import BookingWizard from '../components/booking/BookingWizard'
+import FAQSchema from '../components/seo/FAQSchema.astro'
+import BreadcrumbSchema from '../components/seo/BreadcrumbSchema.astro'
+import { seoData, ROUTES } from '../lib/seo'
+
+const seo = seoData.bookNow
+
+// Pre-select class type from URL param (e.g. /book-now?type=private)
+const typeParam = Astro.url.searchParams.get('type')?.trim()
+const preselectedType = typeParam || undefined
+
+const WHATSAPP = '50686135937'
+const waLink = `https://wa.me/${WHATSAPP}`
+
+const crumbs = [
+  { name: 'Home', href: ROUTES.HOME },
+  { name: 'Book Surf Lessons', href: ROUTES.BOOK },
+]
+
+const choose = [
+  { name: 'Private', href: ROUTES.PRIVATE, price: '$80', unit: '/person', p: "One-on-one, fastest progress, best if you're nervous." },
+  { name: 'Semi-Private', href: ROUTES.SEMI_PRIVATE, price: '$65', unit: '/person', p: 'Just your group of 2–3, no strangers. Couples & friends.' },
+  { name: 'Group', href: ROUTES.GROUP, price: '$50', unit: '/person', p: 'Social and budget-friendly, small groups of up to 4.' },
+]
+
+const know = [
+  { ico: '📍', b: 'Where', p: 'We meet at [meeting point], Tamarindo Beach. Map below.' },
+  { ico: '⏰', b: 'Arrive 10 min early', p: 'So we can get you geared up and start on time.' },
+  { ico: '🎒', b: 'Bring', p: 'Swimsuit, reef-safe sunscreen and water. We provide the rest.' },
+  { ico: '🌊', b: 'Swimming', p: 'Be comfortable in waist-deep water — no strong swimming needed for beginners.' },
+  { ico: '🧒', b: 'Kids', p: 'We teach from age 6. First-time kids do best in a private lesson.' },
+  { ico: '🌙', b: 'Timing', p: 'Lessons follow the tide — best slots fill first, so book ahead in high season.' },
+]
+
+const direct = [
+  { ico: '💰', b: 'Better price', p: 'No middleman, no platform commission added to your bill.' },
+  { ico: '💬', b: 'Talk to your instructor', p: 'Direct contact with the team teaching you — not a call center.' },
+  { ico: '🌊', b: 'Real flexibility', p: "We adjust around the tide and your plans. A rigid platform can't." },
+  { ico: '🌎', b: 'Support local', p: 'Your money goes to the instructors on the beach, not a global company.' },
+]
+
+const faqs = [
+  { question: 'How do I book a surf lesson in Tamarindo?', answer: "The easiest way is to message us on WhatsApp — tell us which lesson and your dates, and we'll confirm fast. You can also book online here in a couple of minutes. Either way, you deal directly with the team that actually teaches you, not a call center or a third-party platform." },
+  { question: 'Can I book a surf lesson for the same day?', answer: "Often yes — especially for private and semi-private lessons. If you're already in Tamarindo, just message us on WhatsApp and we'll tell you the soonest available tide window, sometimes the same day. In high season (December–April), booking a day or two ahead is safer for the best times." },
+  { question: 'How far in advance should I book?', answer: "Most of the year, a day or two ahead is fine. In high season (December–April) and around holidays, the best tide windows fill faster, so a few days ahead is smart. Either way, just message us — if there's a spot, we'll get you in, even last-minute." },
+  { question: 'How quickly will my booking be confirmed?', answer: "Fast — we usually reply to WhatsApp within the hour during the day, and online bookings get a confirmation right away. You won't be left waiting days to find out if you have a lesson, which can happen with bigger platforms." },
+  { question: "What's the cancellation policy?", answer: "You can cancel free of charge up to [X] hours before your lesson. And if we have to move your lesson because the ocean isn't safe for beginners, you'll get either a reschedule or a full refund — we don't keep your money for conditions outside your control." },
+  { question: 'What happens if it rains or the surf is bad?', answer: "Rain alone doesn't cancel a lesson — you're getting wet anyway. The only thing that moves a lesson is unsafe ocean conditions: if the waves or currents aren't right for beginners, we reschedule you to the next good window or refund you in full." },
+  { question: 'Is it cheaper to book directly instead of through Viator or GetYourGuide?', answer: 'Usually, yes. Booking directly with us means no third-party commission added on top, so you often pay less than the same lesson on an OTA. You also get direct contact with your instructor and more flexibility around the tide — things a rigid platform can\'t offer.' },
+  { question: 'How do I pay for my lesson?', answer: "We keep it simple — you can pay securely online when you book here, or arrange payment over WhatsApp. We'll tell you exactly how when you book, and you can always ask first if you'd like to sort payment before you arrive." },
+  { question: 'Do I need to book ahead or can I just show up?', answer: "You can try walking up, but booking ahead is safer because lessons follow the day's tide and the best windows fill first. A quick WhatsApp message before you come down means we'll have a board and instructor ready instead of you waiting around." },
+  { question: 'Can I book a surf lesson as a gift?', answer: "Yes — a surf lesson in Tamarindo makes a great gift. Message us on WhatsApp and we'll sort out the details, including flexible dates so the person can use it whenever suits their trip." },
+]
+---
+
+<BaseLayout title={seo.title} description={seo.description} slug={seo.slug} keyfocus={seo.keyfocus} image={seo.image} synonyms={seo.synonyms} transparentNav={true}>
+  <BreadcrumbSchema slot="head" items={crumbs} />
+  <FAQSchema slot="head" items={faqs} />
+
+  <div class="sl">
+
+    <!-- ═══════════ HERO ═══════════ -->
+    <header class="hero">
+      <div class="hero-inner">
+        <nav class="crumb" aria-label="Breadcrumb">
+          <a href={ROUTES.HOME}>Home</a> / Book a Lesson
+        </nav>
+        <div class="hero-coords"><span class="dot"></span>Tamarindo · Guanacaste · Costa Rica</div>
+        <h1>Book a Surf Lesson in Tamarindo <span class="accent">— often the same day</span></h1>
+        <p class="hero-sub">Booking takes two minutes. No call centers, no waiting days for a reply — you talk directly to the team that will actually teach you, and we confirm fast.</p>
+      </div>
+      <div class="hero-wave" aria-hidden="true"><svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0,36 C240,80 480,4 720,32 C960,60 1200,12 1440,44 L1440,80 L0,80 Z" fill="#06322E"/></svg></div>
+    </header>
+
+    <!-- ═══════════ BOOKING BLOCK (real wizard) ═══════════ -->
+    <div class="bookblock wrap" id="book">
+      <div class="booking-main reveal">
+        <BookingWizard preselectedType={preselectedType} client:idle />
+      </div>
+      <div class="book-extras">
+        <div class="wa-card reveal">
+          <h3>Prefer WhatsApp?</h3>
+          <p>It's the fastest way — message us, ask anything, and book in a couple of texts. We usually reply within the hour.</p>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-wa">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3c-.3.3-.9.9-.9 2.1s.9 2.5 1 2.6c.1.2 1.8 2.7 4.3 3.8 1.6.7 2.2.7 3 .6.5 0 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.5z"/></svg>
+            Message us on WhatsApp
+          </a>
+        </div>
+        <div class="today-card reveal">
+          <b>🏄 Want to surf today?</b>
+          <p>Already in Tamarindo? Message us — if there's space in a good tide window, we'll get you in.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ CHOOSE ═══════════ -->
+    <section id="choose">
+      <div class="wrap">
+        <span class="eyebrow">Pick One</span>
+        <h2>Choose your lesson</h2>
+        <p class="lead">Not sure yet? Here's the quick version — tap any lesson for the full details.</p>
+        <div class="choose-grid">
+          {choose.map(c => (
+            <a href={c.href} class="ch reveal">
+              <h3>{c.name}</h3>
+              <div class="price">{c.price} <small>{c.unit}</small></div>
+              <p>{c.p}</p>
+              <div class="go">Details →</div>
+            </a>
+          ))}
+        </div>
+        <p class="choose-incl">Every lesson includes the board, rash guard, leash, wax, a bilingual instructor and session photos.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════ CANCELLATION ═══════════ -->
+    <!-- TODO: confirm the free-cancellation window ([X] hours) and the deposit/payment policy. -->
+    <section class="cancel" id="cancel">
+      <div class="wrap cancel-inner">
+        <div>
+          <span class="eyebrow gold">Book With Confidence</span>
+          <h2>Free cancellation &amp; flexible rescheduling</h2>
+          <p class="lead">Plans change, and so does the ocean — we get it.</p>
+          <ul class="cancel-list">
+            <li class="reveal"><div class="ic">✓</div><div><b>Free cancellation</b><span>Up to [X] hours before your lesson.</span></div></li>
+            <li class="reveal"><div class="ic">🌊</div><div><b>We reschedule for conditions</b><span>If the ocean isn't safe for beginners, we move your lesson or refund you.</span></div></li>
+            <li class="reveal"><div class="ic">💳</div><div><b>No deposit drama</b><span>Pay securely online, or hold your spot with a small deposit — your choice.</span></div></li>
+          </ul>
+        </div>
+        <div class="cancel-card reveal">
+          <h3>What if the weather or surf is bad?</h3>
+          <p>Rain doesn't cancel a surf lesson — you're getting wet anyway, and surfing in warm Costa Rican rain is honestly a great memory. The only thing that moves a lesson is the ocean itself: if the waves or currents aren't safe for beginners, we'll reschedule you to the next good window or give you a full refund.</p>
+          <p class="cancel-quote">The ocean decides, not the forecast.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ KNOW BEFORE ═══════════ -->
+    <section>
+      <div class="wrap">
+        <span class="eyebrow">Before You Book</span>
+        <h2>What to know before you book</h2>
+        <p class="lead">A few quick things so your lesson goes smoothly.</p>
+        <div class="know-grid">
+          {know.map(k => (
+            <div class="kb reveal"><div class="ico">{k.ico}</div><div><b>{k.b}</b><p>{k.p}</p></div></div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ DIRECT ═══════════ -->
+    <section class="direct">
+      <div class="wrap">
+        <span class="eyebrow">Skip the Middleman</span>
+        <h2>Why book direct with Outsider</h2>
+        <p class="lead">You'll see surf lessons on Viator, GetYourGuide and other booking sites. Here's why booking direct with us is the better move.</p>
+        <div class="direct-grid">
+          {direct.map(d => (
+            <div class="dr reveal"><div class="ico">{d.ico}</div><b>{d.b}</b><p>{d.p}</p></div>
+          ))}
+        </div>
+        <p class="direct-line">Same lesson, better price, real people.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════ LOCATION ═══════════ -->
+    <section id="location">
+      <div class="wrap">
+        <span class="eyebrow">Find Us</span>
+        <h2>Where to find us in Tamarindo</h2>
+        <div class="loc-grid">
+          <div class="loc-info">
+            <p><span class="ico">📍</span><span><strong>[Meeting point]</strong><br>Tamarindo, Guanacaste, Costa Rica</span></p>
+            <p><span class="ico">📞</span><span>[+506 XXXX-XXXX] — call or WhatsApp</span></p>
+            <p><span class="ico">✉️</span><span>[email]</span></p>
+            <p><span class="ico">🌊</span><span>Lessons daily, scheduled around the tide</span></p>
+            <a href="#book" class="lp-btn lp-btn-sun loc-cta">Book Your Lesson</a>
+          </div>
+          <div class="loc-map">
+            <iframe
+              title="Outsider Surf Academy — Tamarindo Beach, Guanacaste, Costa Rica"
+              src="https://maps.google.com/maps?q=Tamarindo+Beach,+Guanacaste,+Costa+Rica&t=m&z=14&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ FAQ ═══════════ -->
+    <section class="faq" id="faq">
+      <div class="wrap-narrow">
+        <span class="eyebrow">FAQ</span>
+        <h2>Booking FAQs</h2>
+        <div style="margin-top:34px">
+          {faqs.map(f => (
+            <details class="reveal"><summary>{f.question}</summary><p>{f.answer}</p></details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ CTA ═══════════ -->
+    <section class="cta">
+      <div class="wrap">
+        <div class="cta-box reveal">
+          <h2>Ready to surf? Book your lesson now</h2>
+          <p>The waves are waiting. Pick your lesson and let's get you in the water.</p>
+          <div class="cta-ctas">
+            <a href="#book" class="lp-btn lp-btn-sun">Book Online</a>
+            <a href={waLink} target="_blank" rel="noopener noreferrer" class="lp-btn lp-btn-wa">Message us on WhatsApp</a>
+          </div>
+          <address>📍 Tamarindo Beach, Guanacaste, Costa Rica</address>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  /* Book a lesson — scoped local styles, reusing the global Outsider palette
+     tokens defined in global.css. Ported from the approved prototype; the
+     mockup form is replaced by the real <BookingWizard> island. */
+  .sl { --teal-light:#5FD3C6; }
+  .sl :global(*) { box-sizing:border-box; }
+
+  .wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+  .wrap-narrow { max-width:860px; margin:0 auto; padding:0 24px; }
+  .sl section { padding:80px 0; }
+
+  .eyebrow { display:inline-flex; align-items:center; gap:.6rem; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--teal-deep); margin-bottom:14px; }
+  .eyebrow::before { content:""; width:22px; height:1.5px; background:var(--sun); }
+  .eyebrow.gold { color:var(--gold); }
+  .eyebrow.gold::before { background:var(--gold); }
+  .lead { color:var(--ink-soft); max-width:660px; margin-top:14px; }
+
+  .lp-btn { display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:15px 28px; border-radius:999px; font-weight:700; font-size:1rem; text-decoration:none; cursor:pointer; border:none; font-family:var(--font-body); transition:transform .18s ease,box-shadow .18s ease; }
+  .lp-btn:hover { transform:translateY(-2px); }
+  .lp-btn svg { width:17px; height:17px; }
+  .lp-btn-sun { background:var(--sun); color:#fff; box-shadow:0 14px 28px -12px rgba(255,107,61,.5); }
+  .lp-btn-wa { background:#25D366; color:#fff; box-shadow:0 14px 28px -12px rgba(37,211,102,.5); }
+  .lp-btn-white { background:#fff; color:var(--teal-deep); }
+
+  /* HERO */
+  .hero { position:relative; overflow:hidden; color:#fff;
+    background:radial-gradient(1100px 480px at 82% -12%,rgba(255,107,61,.22),transparent 58%),
+    linear-gradient(160deg,#04413B 0%,#06322E 30%,#00897C 72%,#00B4A2 105%); }
+  .hero-inner { max-width:1120px; margin:0 auto; padding:120px 24px 132px; position:relative; z-index:2; }
+  .crumb { font-family:var(--font-mono); font-size:.72rem; color:rgba(255,255,255,.7); margin-bottom:18px; letter-spacing:.04em; }
+  .crumb a { color:rgba(255,255,255,.7); text-decoration:none; }
+  .crumb a:hover { color:#fff; }
+  .hero-coords { display:inline-flex; align-items:center; gap:9px; font-family:var(--font-mono); font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.82); margin-bottom:20px; }
+  .hero-coords .dot { width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 4px rgba(255,201,92,.25); }
+  .hero h1 { font-family:var(--font-display); font-size:clamp(2.2rem,5vw,3.5rem); font-weight:600; line-height:1.12; letter-spacing:-.01em; max-width:760px; color:#fff; }
+  .hero h1 .accent { color:var(--gold); font-style:italic; font-weight:500; }
+  .hero-sub { margin:22px 0 0; font-size:1.12rem; max-width:580px; color:rgba(255,255,255,.88); }
+  .hero-wave { position:absolute; bottom:-1px; left:0; width:100%; line-height:0; z-index:1; }
+  .hero-wave svg { width:100%; height:80px; display:block; }
+
+  /* BOOKING BLOCK — real wizard pulled up over the wave */
+  .bookblock { margin-top:-70px; position:relative; z-index:5; }
+  .booking-main { max-width:920px; margin:0 auto; }
+  .book-extras { max-width:920px; margin:22px auto 0; display:grid; grid-template-columns:1.4fr 1fr; gap:20px; align-items:start; }
+  .wa-card { background:linear-gradient(150deg,var(--teal-deep),var(--teal)); border-radius:var(--radius); color:#fff; padding:26px 28px; box-shadow:var(--shadow); }
+  .wa-card h3 { font-family:var(--font-display); color:#fff; font-size:1.2rem; margin-bottom:6px; }
+  .wa-card p { font-size:.92rem; color:rgba(255,255,255,.88); margin-bottom:16px; }
+  .wa-card .lp-btn { width:100%; }
+  .today-card { background:var(--sun-soft); border-radius:var(--radius); padding:24px; border:1px dashed var(--sun-light); }
+  .today-card b { font-family:var(--font-display); display:block; margin-bottom:4px; }
+  .today-card p { font-size:.9rem; color:var(--ink-soft); }
+
+  /* CHOOSE */
+  .choose-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:38px; }
+  .ch { background:#fff; border-radius:var(--radius); padding:24px 22px; box-shadow:0 10px 30px -22px rgba(6,50,46,.3); text-decoration:none; color:var(--ink); display:flex; flex-direction:column; transition:transform .2s ease; }
+  .ch:hover { transform:translateY(-4px); }
+  .ch h3 { font-family:var(--font-display); font-size:1.08rem; }
+  .ch .price { font-family:var(--font-display); font-size:1.25rem; color:var(--teal-deep); margin:6px 0 8px; }
+  .ch .price small { font-family:var(--font-body); font-size:.74rem; color:var(--ink-soft); font-weight:600; }
+  .ch p { font-size:.87rem; color:var(--ink-soft); flex:1; }
+  .ch .go { font-family:var(--font-mono); font-size:.72rem; color:var(--sun); font-weight:700; margin-top:12px; }
+  .choose-incl { margin-top:22px; text-align:center; font-size:.92rem; color:var(--ink-soft); }
+
+  /* CANCELLATION */
+  .cancel { background:var(--ink); color:#fff; }
+  .cancel-inner { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+  .cancel h2 { color:#fff; }
+  .cancel .lead { color:rgba(255,255,255,.8); }
+  .cancel-list { list-style:none; display:grid; gap:14px; margin-top:8px; }
+  .cancel-list li { display:flex; gap:14px; align-items:flex-start; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:16px 18px; }
+  .cancel-list .ic { flex:0 0 38px; height:38px; border-radius:10px; background:var(--teal); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+  .cancel-list b { display:block; color:#fff; }
+  .cancel-list span { font-size:.9rem; color:rgba(255,255,255,.72); }
+  .cancel-card { background:rgba(255,201,92,.1); border:1px solid rgba(255,201,92,.3); border-radius:var(--radius); padding:26px; }
+  .cancel-card h3 { font-family:var(--font-display); color:var(--gold); font-size:1.1rem; margin-bottom:10px; }
+  .cancel-card p { font-size:.95rem; color:rgba(255,255,255,.85); }
+  .cancel-quote { margin-top:12px; font-family:var(--font-display); font-style:italic; color:#fff; }
+
+  /* KNOW BEFORE */
+  .know-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:38px; }
+  .kb { background:#fff; border-radius:var(--radius); padding:22px; box-shadow:0 10px 30px -22px rgba(6,50,46,.28); display:flex; gap:13px; align-items:flex-start; }
+  .kb .ico { flex:0 0 38px; height:38px; border-radius:10px; background:var(--foam); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+  .kb b { display:block; font-size:.97rem; }
+  .kb p { font-size:.86rem; color:var(--ink-soft); }
+
+  /* DIRECT */
+  .direct { background:var(--foam); }
+  .direct-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:38px; }
+  .dr { background:#fff; border-radius:var(--radius); padding:24px; box-shadow:0 10px 30px -22px rgba(6,50,46,.28); text-align:center; }
+  .dr .ico { font-size:1.7rem; margin-bottom:10px; }
+  .dr b { display:block; font-family:var(--font-display); font-size:1.02rem; margin-bottom:6px; }
+  .dr p { font-size:.87rem; color:var(--ink-soft); }
+  .direct-line { margin-top:24px; text-align:center; font-family:var(--font-display); font-size:1.2rem; color:var(--teal-deep); }
+
+  /* LOCATION */
+  .loc-grid { display:grid; grid-template-columns:1fr 1.2fr; gap:40px; align-items:center; margin-top:34px; }
+  .loc-info p { margin-bottom:12px; display:flex; gap:10px; align-items:flex-start; }
+  .loc-info .ico { flex:0 0 auto; }
+  .loc-cta { margin-top:8px; }
+  .loc-map { background:var(--sand-deep); border-radius:var(--radius); height:320px; overflow:hidden; border:1px solid rgba(6,50,46,.1); }
+  .loc-map iframe { width:100%; height:100%; border:0; display:block; }
+
+  /* FAQ */
+  .faq details { background:#fff; border-radius:14px; margin-bottom:12px; box-shadow:0 6px 18px -14px rgba(6,50,46,.3); overflow:hidden; }
+  .faq summary { padding:20px 54px 20px 24px; font-weight:700; cursor:pointer; list-style:none; position:relative; font-size:1.02rem; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary::after { content:"+"; position:absolute; right:22px; top:50%; transform:translateY(-50%); font-size:1.5rem; color:var(--sun); font-weight:400; transition:transform .2s; }
+  .faq details[open] summary::after { transform:translateY(-50%) rotate(45deg); }
+  .faq details p { padding:0 24px 22px; color:var(--ink-soft); font-size:.96rem; }
+
+  /* CTA */
+  .cta-box { background:radial-gradient(800px 360px at 18% 115%,rgba(255,107,61,.28),transparent 60%),linear-gradient(150deg,#06322E,#00897C); color:#fff; text-align:center; border-radius:var(--radius); padding:66px 30px; box-shadow:var(--shadow); }
+  .cta-box h2 { color:#fff; margin-bottom:12px; }
+  .cta-box p { color:rgba(255,255,255,.85); max-width:500px; margin:0 auto 26px; }
+  .cta-ctas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .cta-box address { margin-top:24px; font-style:normal; font-size:.86rem; color:rgba(255,255,255,.7); font-family:var(--font-mono); }
+
+  /* REVEAL */
+  .reveal { opacity:0; transform:translateY(22px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity:1; transform:none; }
+
+  @media (max-width:920px) {
+    .book-extras { grid-template-columns:1fr; }
+    .cancel-inner, .loc-grid { grid-template-columns:1fr; }
+    .choose-grid, .direct-grid { grid-template-columns:repeat(2,1fr); }
+    .know-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width:640px) {
+    .sl section { padding:56px 0; }
+    .choose-grid, .direct-grid { grid-template-columns:1fr; }
+    .hero-inner { padding:104px 24px 116px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity:1; transform:none; transition:none; }
+  }
+</style>
+
+<script>
+  const io = new IntersectionObserver((es) => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+  }), { threshold: .12 })
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el))
+</script>

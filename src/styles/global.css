@@ -1,0 +1,104 @@
+/* Outsider Surf Academy — global styles.
+   Fonts (Fraunces display + Hanken Grotesk body + Space Mono utility) are
+   self-hosted via @fontsource, imported in BaseLayout.astro. */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Outsider coastal "ocean ink" palette (single source of truth) ──── */
+    --sand:        #F7F2EA;
+    --sand-deep:   #EFE6D5;
+    --ink:         #06322E;
+    --ink-soft:    #5E6F66;
+    --teal:        #00B4A2;
+    --teal-deep:   #00897C;
+    --teal-light:  #5FD3C6;
+    --sun:         #FF6B3D;
+    --sun-soft:    #FFE9E0;
+    --sun-light:   #FF8A63;
+    --foam:        #E8F4F2;
+    --gold:        #FFC95C;
+    --white:       #FFFFFF;
+    --radius:      18px;
+    --shadow:      0 18px 40px -18px rgba(6,50,46,.22);
+    --font-display:"Fraunces Variable","Fraunces",Georgia,serif;
+    --font-body:   "Hanken Grotesk Variable","Hanken Grotesk",system-ui,sans-serif;
+    --font-mono:   "Space Mono",ui-monospace,monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--sand);
+    line-height: 1.6;
+    @apply antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    line-height: 1.12;
+    letter-spacing: -.01em;
+    font-weight: 600;
+  }
+  h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); }
+  h3 { font-size: 1.25rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+}
+
+@layer components {
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .container { @apply max-w-6xl mx-auto px-4; }
+  .section { padding: 84px 0; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: .6rem;
+    font-family: var(--font-mono); font-size: .72rem; font-weight: 400;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--teal-deep); margin-bottom: 14px;
+  }
+  .eyebrow::before { content: ''; width: 22px; height: 1px; background: currentColor; opacity: .6; }
+  .lead { color: var(--ink-soft); max-width: 640px; }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .btn {
+    display: inline-block; padding: 15px 30px; border-radius: 999px;
+    font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer;
+    border: none; font-family: var(--font-body);
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-sun { background: var(--sun); color: #fff; box-shadow: 0 14px 28px -12px rgba(255,107,61,.5); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 2px solid rgba(13,59,67,.25); }
+  .btn-ghost:hover { border-color: var(--ink); }
+  .btn-white { background: #fff; color: var(--teal-deep); }
+
+  /* ── Cards / shared surfaces ─────────────────────────────────────────── */
+  .surface {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: 0 10px 30px -20px rgba(13,59,67,.2);
+  }
+
+  /* ── Reveal-on-scroll ────────────────────────────────────────────────── */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ── FAQ (native details) ────────────────────────────────────────────── */
+  .faq details { background: #fff; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 6px 18px -14px rgba(13,59,67,.3); overflow: hidden; }
+  .faq summary { padding: 20px 54px 20px 24px; font-weight: 700; cursor: pointer; list-style: none; position: relative; font-size: 1.02rem; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; position: absolute; right: 22px; top: 50%; transform: translateY(-50%); font-size: 1.5rem; color: var(--sun); font-weight: 400; transition: transform .2s; }
+  .faq details[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+  .faq details p { padding: 0 24px 22px; color: var(--ink-soft); font-size: .97rem; }
+}

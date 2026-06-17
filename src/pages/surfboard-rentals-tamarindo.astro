@@ -1,0 +1,375 @@
+---
+export const prerender = true
+import BaseLayout from '../layouts/BaseLayout.astro'
+import FAQSchema from '../components/seo/FAQSchema.astro'
+import BreadcrumbSchema from '../components/seo/BreadcrumbSchema.astro'
+import { seoData, ROUTES } from '../lib/seo'
+
+const seo = seoData.rentals
+
+const crumbs = [
+  { name: 'Home', href: ROUTES.HOME },
+  { name: 'Surfboard Rentals', href: ROUTES.RENTALS },
+]
+
+// TODO: replace $X / [X]% placeholders with the real rental rates and lesson-student discount.
+const boards = [
+  {
+    grad: 'bt1', photo: '[Photo: soft-top on the sand]',
+    name: 'Soft-Top Boards', tag: 'Best for beginners',
+    p: 'Stable, easy to paddle, and soft when they hit you — which they will. The safest, most forgiving way to keep practicing after a lesson.',
+    best: 'Beginners, kids & anyone working on standing up',
+  },
+  {
+    grad: 'bt2', photo: '[Photo: funboard]',
+    name: 'Funboards', tag: 'Best for improvers',
+    p: "The natural next step once you're catching waves. Longer and more stable than a shortboard, but easier to turn than a longboard. The board that grows with you.",
+    best: 'Surfers who can stand up and want to start steering',
+  },
+  {
+    grad: 'bt3', photo: '[Photo: shortboard]',
+    name: 'Shortboards', tag: 'For experienced surfers',
+    p: "Know what you're doing and just didn't bring your board? Tell us what you ride and we'll set you up — or point you to the right shop if we don't have your exact shape.",
+    best: 'Experienced surfers who travel light',
+  },
+]
+
+const why = [
+  { ico: '🏖️', b: 'Right on the beach', p: 'Pick up, paddle out, and drop off where you surfed — no hauling a board across town.' },
+  { ico: '🌅', b: 'Keep it for the dawn session', p: "Rent for the day and take it overnight, so you're in the water for the best morning waves." },
+  { ico: '🧭', b: 'Local advice included', p: "We'll tell you the right spot and tide for your level, free with every rental." },
+  { ico: '✨', b: 'Well-kept boards', p: 'The same boards we trust for our lessons — maintained, waxed and ready.' },
+]
+
+const how = [
+  { ico: '📱', b: 'Reserve or walk up', p: "Message us on WhatsApp to hold a board, or just come by — we're on the beach." },
+  { ico: '🏄', b: 'Pickup', p: "We set up your board with leash and wax, and check you've got the right size." },
+  { ico: '🪪', b: 'Deposit', p: 'A deposit or photo of your ID while you have the board — returned when you bring it back.' },
+  { ico: '🌙', b: 'Overnight & weekly', p: 'Keep it overnight for the morning, or by the week for the best rate.' },
+  { ico: '🛠️', b: 'Damage', p: "Normal wear is on us; major dings are the renter's responsibility. We'll explain at pickup." },
+]
+
+const faqs = [
+  { question: 'How much does it cost to rent a surfboard in Tamarindo?', answer: 'Rentals start at $X per day, with lower rates the longer you rent. A leash and wax are included, and lesson students get [X]% off for the rest of their trip. Prices in Tamarindo generally range from about $10 to $25 a day depending on the board and shop.' },
+  { question: 'What surfboard should I rent as a beginner?', answer: "A soft-top longboard — every time. They're stable, easy to paddle and soft when you fall, which makes them the safest, most forgiving board to learn and practice on. We'll size it to you when you pick up." },
+  { question: 'Where can I rent a surfboard in Tamarindo?', answer: 'Right on Tamarindo Beach from us — we\'re a surf school, so you pick up your board, paddle out, and drop it off at the same spot you surfed. No hauling a board across town. Message us on WhatsApp to reserve ahead, or just come find us.' },
+  { question: 'Can I keep the surfboard overnight?', answer: "Yes — rent by the day and you can keep the board overnight at no extra charge. It's the move we recommend: the calmest, cleanest waves are often early morning, so having the board ready at dawn means you beat the crowds." },
+  { question: 'Do I need a deposit to rent a surfboard?', answer: "We ask for a small deposit or a photo of your ID while you have the board, returned when you bring it back in good shape. Quick and standard — we'd rather keep it simple so you can get in the water fast." },
+  { question: 'Can I rent a board for my kids?', answer: "Yes — we keep smaller soft-tops that are ideal and safe for kids. Tell us their age and size and we'll set them up with the right board. Soft-tops are the safest option since there's no hard fiberglass to bump into." },
+  { question: 'Do I need to take a lesson before renting?', answer: "Not at all — anyone can rent. But if you've never surfed, one lesson first will save you a frustrating day of paddling, and you'll get a discount on rentals afterward. That lesson-then-rent combo is the fastest, cheapest way to actually enjoy surfing on your trip." },
+  { question: "What's the difference between a soft-top, funboard and shortboard?", answer: "A soft-top is a stable, foam-topped board best for beginners and kids. A funboard is a step up — still stable but easier to turn — ideal once you can stand up. A shortboard is for experienced surfers. We'll talk to you for a minute and point you to whichever fits your level, not the priciest one." },
+  { question: 'Can I rent a surfboard for a whole week?', answer: "Definitely — weekly rentals are the best value, since the per-day rate drops the longer you keep the board. If you're in Tamarindo for a week and plan to surf most days, a weekly rental works out much cheaper than day by day. Tell us your dates for the weekly rate." },
+  { question: 'Is Tamarindo a good place to surf on my own after renting?', answer: "For beginners and improvers, yes — the main beach break has a sandy bottom, warm water and gentle inside waves. That said, conditions and tides change daily, so when you rent from us we'll tell you the right spot and time for your level that day — free with your board." },
+]
+---
+
+<BaseLayout title={seo.title} description={seo.description} slug={seo.slug} keyfocus={seo.keyfocus} image={seo.image} synonyms={seo.synonyms} transparentNav={true}>
+  <BreadcrumbSchema slot="head" items={crumbs} />
+  <FAQSchema slot="head" items={faqs} />
+
+  <div class="sl">
+
+    <!-- ═══════════ HERO ═══════════ -->
+    <header class="hero">
+      <div class="hero-inner">
+        <nav class="crumb" aria-label="Breadcrumb">
+          <a href={ROUTES.HOME}>Home</a> / Surfboard Rentals
+        </nav>
+        <div class="hero-coords"><span class="dot"></span>Tamarindo · Guanacaste · Costa Rica</div>
+        <h1>Surfboard Rentals in Tamarindo <span class="accent">— grab a board and paddle out</span></h1>
+        <p class="hero-sub">Soft-tops, funboards and shortboards by the hour, day or week — right on Tamarindo Beach. Quality boards, fair prices, and honest advice on what to ride today. Took a lesson with us? Your rentals come at a discount.</p>
+        <div class="hero-ctas">
+          <a href="#prices" class="lp-btn lp-btn-sun">Check Rental Prices
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a href={ROUTES.CONTACT} class="lp-btn lp-btn-line">WhatsApp Us</a>
+        </div>
+      </div>
+      <div class="hero-wave" aria-hidden="true"><svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0,36 C240,80 480,4 720,32 C960,60 1200,12 1440,44 L1440,80 L0,80 Z" fill="#06322E"/></svg></div>
+    </header>
+
+    <!-- ═══════════ PRICE TABLE (dark header emerges from the wave) ═══════════ -->
+    <div class="pricetable wrap" id="prices">
+      <div class="pt-card reveal">
+        <div class="pt-head">
+          <div>Board type</div><div>Per hour</div><div>Per day</div><div>Per week</div>
+        </div>
+        <div class="pt-row">
+          <div class="board">Soft-top <span>Beginners</span></div>
+          <div class="price">$X</div><div class="price">$X</div><div class="price">$X</div>
+        </div>
+        <div class="pt-row">
+          <div class="board">Funboard <span>Improvers</span></div>
+          <div class="price">$X</div><div class="price">$X</div><div class="price">$X</div>
+        </div>
+        <div class="pt-row">
+          <div class="board">Shortboard <span>Experienced</span></div>
+          <div class="price">$X</div><div class="price">$X</div><div class="price">$X</div>
+        </div>
+        <div class="pt-note">
+          <span>✓ <b>Leash &amp; wax included</b></span>
+          <span>✓ <b>Multi-day discount</b> — lower daily rate the longer you rent</span>
+          <span>✓ <b>Lesson students get [X]% off</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ BOARDS ═══════════ -->
+    <section class="boards" id="boards">
+      <div class="wrap">
+        <span class="eyebrow">Our Boards</span>
+        <h2>Soft-tops, funboards &amp; shortboards</h2>
+        <p class="lead">We keep boards that match how most people actually surf Tamarindo — stable, fun and forgiving. Here's what we rent and who each one is for.</p>
+        <div class="boards-grid">
+          {boards.map(b => (
+            <article class="bcard reveal">
+              <div class:list={['bcard-top', b.grad]}>{b.photo}</div>
+              <div class="bcard-body">
+                <h3>{b.name}</h3>
+                <div class="tag">{b.tag}</div>
+                <p>{b.p}</p>
+                <div class="best">{b.best}</div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ CHOOSE ═══════════ -->
+    <section class="choose">
+      <div class="wrap choose-inner">
+        <div>
+          <span class="eyebrow gold">Honest Advice</span>
+          <h2>Not sure which board to rent?</h2>
+          <p class="lead">Here's the advantage of renting from a surf school instead of a counter: we actually teach this, so we'll put you on the right board — not the most expensive one.</p>
+          <div class="choose-tip">🌊 And because we surf this beach every day, we'll also tell you <strong>where and when</strong> to paddle out for your level — which matters as much as the board under your feet.</div>
+        </div>
+        <ul class="choose-rules reveal">
+          <li><div class="q">Total<br>beginner?</div><div><b>Soft-top longboard</b><span>Stability beats everything when you're learning.</span></div></li>
+          <li><div class="q">Wobbly<br>but up?</div><div><b>A bigger funboard</b><span>Keeps paddling easy while you build confidence.</span></div></li>
+          <li><div class="q">Surfed<br>before?</div><div><b>Matched to you</b><span>To your level, your weight and the day's conditions.</span></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══════════ FUNNEL (lesson → rent) ═══════════ -->
+    <section class="funnel" id="funnel">
+      <div class="wrap">
+        <div class="funnel-band reveal">
+          <span class="eyebrow gold">Smart Move</span>
+          <h2>Take a surf lesson, rent for less</h2>
+          <p>Students who take a lesson with us get [X]% off board rentals for the rest of their trip. Learn the basics properly, then keep practicing on your own — on a board we've already matched to you, at a lower rate. It's the cheapest way to actually <em>learn</em> to surf this trip, instead of renting a board, struggling alone, and giving up by day two.</p>
+          <a href={ROUTES.SURF_LESSONS} class="lp-btn lp-btn-white">See Surf Lessons →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ WHY ═══════════ -->
+    <section>
+      <div class="wrap">
+        <span class="eyebrow">Why Us</span>
+        <h2>Why rent from Outsider Surf Academy</h2>
+        <p class="lead">Plenty of places in Tamarindo rent boards. Here's why renting from us is easy.</p>
+        <div class="why-grid">
+          {why.map(w => (
+            <div class="why-item reveal"><div class="ico">{w.ico}</div><div><b>{w.b}</b><p>{w.p}</p></div></div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ HOW IT WORKS ═══════════ -->
+    <section class="how" id="how">
+      <div class="wrap">
+        <span class="eyebrow">How It Works</span>
+        <h2>Pricing, deposit &amp; pickup</h2>
+        <p class="lead">Renting from us is quick. Here's exactly how it works, so there are no surprises.</p>
+        <div class="how-grid">
+          {how.map(s => (
+            <div class="how-step reveal"><div class="ico">{s.ico}</div><b>{s.b}</b><p>{s.p}</p></div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ FAQ ═══════════ -->
+    <section class="faq" id="faq">
+      <div class="wrap-narrow">
+        <span class="eyebrow">FAQ</span>
+        <h2>Surfboard rental FAQs</h2>
+        <div style="margin-top:34px">
+          {faqs.map(f => (
+            <details class="reveal"><summary>{f.question}</summary><p>{f.answer}</p></details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ CTA ═══════════ -->
+    <section class="cta" id="book">
+      <div class="wrap">
+        <div class="cta-box reveal">
+          <h2>Rent your surfboard in Tamarindo today</h2>
+          <p>We're right on the beach with boards waxed and ready. Message us on WhatsApp to reserve one, or just come find us.</p>
+          <div class="cta-ctas">
+            <a href={ROUTES.CONTACT} class="lp-btn lp-btn-sun">Message us on WhatsApp</a>
+            <a href={ROUTES.SURF_LESSONS} class="lp-btn lp-btn-white">See Surf Lessons</a>
+          </div>
+          <address>📍 Tamarindo Beach, Guanacaste, Costa Rica</address>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  /* Surfboard rentals — scoped local styles, reusing the global Outsider
+     palette tokens defined in global.css. Ported from the approved prototype. */
+  .sl { --teal-light:#5FD3C6; }
+  .sl :global(*) { box-sizing:border-box; }
+
+  .wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+  .wrap-narrow { max-width:860px; margin:0 auto; padding:0 24px; }
+  .sl section { padding:84px 0; }
+
+  .eyebrow { display:inline-flex; align-items:center; gap:.6rem; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--teal-deep); margin-bottom:14px; }
+  .eyebrow::before { content:""; width:22px; height:1.5px; background:var(--sun); }
+  .eyebrow.gold { color:var(--gold); }
+  .eyebrow.gold::before { background:var(--gold); }
+  .lead { color:var(--ink-soft); max-width:660px; margin-top:14px; }
+
+  .lp-btn { display:inline-flex; align-items:center; gap:9px; padding:15px 28px; border-radius:999px; font-weight:700; font-size:1rem; text-decoration:none; cursor:pointer; border:none; font-family:var(--font-body); transition:transform .18s ease,box-shadow .18s ease; }
+  .lp-btn:hover { transform:translateY(-2px); }
+  .lp-btn svg { width:16px; height:16px; }
+  .lp-btn-sun { background:var(--sun); color:#fff; box-shadow:0 14px 28px -12px rgba(255,107,61,.5); }
+  .lp-btn-line { background:transparent; color:#fff; border:2px solid rgba(255,255,255,.4); }
+  .lp-btn-line:hover { border-color:#fff; }
+  .lp-btn-white { background:#fff; color:var(--teal-deep); }
+
+  /* HERO */
+  .hero { position:relative; overflow:hidden; color:#fff;
+    background:radial-gradient(1100px 480px at 82% -12%,rgba(255,107,61,.22),transparent 58%),
+    linear-gradient(160deg,#04413B 0%,#06322E 30%,#00897C 72%,#00B4A2 105%); }
+  .hero-inner { max-width:1120px; margin:0 auto; padding:120px 24px 138px; position:relative; z-index:2; }
+  .crumb { font-family:var(--font-mono); font-size:.72rem; color:rgba(255,255,255,.7); margin-bottom:18px; letter-spacing:.04em; }
+  .crumb a { color:rgba(255,255,255,.7); text-decoration:none; }
+  .crumb a:hover { color:#fff; }
+  .hero-coords { display:inline-flex; align-items:center; gap:9px; font-family:var(--font-mono); font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.82); margin-bottom:20px; }
+  .hero-coords .dot { width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 4px rgba(255,201,92,.25); }
+  .hero h1 { font-family:var(--font-display); font-size:clamp(2.2rem,5vw,3.6rem); font-weight:600; line-height:1.12; letter-spacing:-.01em; max-width:800px; color:#fff; }
+  .hero h1 .accent { color:var(--gold); font-style:italic; font-weight:500; }
+  .hero-sub { margin:22px 0 32px; font-size:1.12rem; max-width:600px; color:rgba(255,255,255,.88); }
+  .hero-ctas { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .hero-wave { position:absolute; bottom:-1px; left:0; width:100%; line-height:0; z-index:1; }
+  .hero-wave svg { width:100%; height:80px; display:block; }
+
+  /* PRICE TABLE — its dark header emerges from the dark wave */
+  .pricetable { margin-top:-56px; position:relative; z-index:5; }
+  .pt-card { background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+  .pt-head { display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; background:var(--ink); color:#fff; }
+  .pt-head div { padding:16px 22px; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; }
+  .pt-row { display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; border-top:1px solid rgba(6,50,46,.08); }
+  .pt-row div { padding:18px 22px; display:flex; align-items:center; }
+  .pt-row .board { font-weight:700; }
+  .pt-row .board span { font-family:var(--font-mono); font-size:.66rem; color:var(--ink-soft); font-weight:400; display:block; text-transform:uppercase; letter-spacing:.05em; }
+  .pt-row .price { font-family:var(--font-display); font-size:1.2rem; color:var(--teal-deep); }
+  .pt-note { display:flex; gap:18px; flex-wrap:wrap; padding:18px 22px; background:var(--foam); font-size:.88rem; color:var(--ink-soft); }
+  .pt-note b { color:var(--ink); }
+
+  /* BOARDS */
+  .boards-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:42px; }
+  .bcard { background:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 10px 30px -22px rgba(6,50,46,.3); display:flex; flex-direction:column; }
+  .bcard-top { height:120px; display:flex; align-items:flex-end; padding:16px; color:#fff; font-family:var(--font-mono); font-size:.7rem; }
+  .bt1 { background:linear-gradient(150deg,#00B4A2,#5FD3C6); }
+  .bt2 { background:linear-gradient(150deg,#00897C,#00B4A2); }
+  .bt3 { background:linear-gradient(150deg,#06322E,#00897C); }
+  .bcard-body { padding:24px; display:flex; flex-direction:column; flex:1; }
+  .bcard-body h3 { font-family:var(--font-display); font-size:1.1rem; }
+  .bcard-body .tag { font-family:var(--font-mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sun); font-weight:700; margin:4px 0 10px; }
+  .bcard-body p { font-size:.92rem; color:var(--ink-soft); flex:1; }
+  .bcard-body .best { margin-top:12px; font-size:.84rem; background:var(--foam); padding:8px 12px; border-radius:9px; color:var(--ink); }
+
+  /* CHOOSE */
+  .choose { background:var(--ink); color:#fff; }
+  .choose-inner { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+  .choose h2 { color:#fff; }
+  .choose .lead { color:rgba(255,255,255,.78); }
+  .choose-rules { list-style:none; display:grid; gap:14px; margin-top:8px; }
+  .choose-rules li { display:flex; gap:14px; align-items:flex-start; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:16px 18px; }
+  .choose-rules .q { flex:0 0 auto; font-family:var(--font-mono); font-size:.7rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding-top:2px; }
+  .choose-rules b { display:block; color:#fff; }
+  .choose-rules span { font-size:.9rem; color:rgba(255,255,255,.72); }
+  .choose-tip { margin-top:18px; background:rgba(255,201,92,.12); border-radius:12px; padding:16px 18px; font-size:.93rem; color:rgba(255,255,255,.88); }
+
+  /* FUNNEL (lesson → rent) */
+  .funnel { padding:0; }
+  .sl section.funnel { padding:0; }
+  .funnel-band { background:linear-gradient(120deg,var(--teal-deep),var(--teal)); border-radius:var(--radius); color:#fff; padding:46px 48px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .funnel-band::after { content:"🏄"; position:absolute; font-size:10rem; right:-15px; bottom:-35px; opacity:.13; }
+  .funnel-band h2 { color:#fff; max-width:560px; position:relative; }
+  .funnel-band p { color:rgba(255,255,255,.9); max-width:580px; margin:12px 0 22px; position:relative; }
+  .funnel-band .lp-btn { position:relative; }
+
+  /* WHY */
+  .why-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-top:40px; }
+  .why-item { background:#fff; border-radius:var(--radius); padding:24px 26px; box-shadow:0 10px 30px -22px rgba(6,50,46,.3); display:flex; gap:16px; align-items:flex-start; }
+  .why-item .ico { flex:0 0 44px; height:44px; border-radius:12px; background:var(--foam); display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
+  .why-item b { display:block; font-family:var(--font-display); font-size:1.06rem; margin-bottom:5px; }
+  .why-item p { font-size:.92rem; color:var(--ink-soft); }
+
+  /* HOW IT WORKS */
+  .how { background:var(--foam); }
+  .how-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-top:40px; }
+  .how-step { background:#fff; border-radius:var(--radius); padding:22px 18px; box-shadow:0 10px 30px -22px rgba(6,50,46,.25); }
+  .how-step .ico { font-size:1.5rem; margin-bottom:8px; }
+  .how-step b { display:block; font-family:var(--font-display); font-size:.98rem; margin-bottom:5px; }
+  .how-step p { font-size:.84rem; color:var(--ink-soft); }
+
+  /* FAQ */
+  .faq details { background:#fff; border-radius:14px; margin-bottom:12px; box-shadow:0 6px 18px -14px rgba(6,50,46,.3); overflow:hidden; }
+  .faq summary { padding:20px 54px 20px 24px; font-weight:700; cursor:pointer; list-style:none; position:relative; font-size:1.02rem; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary::after { content:"+"; position:absolute; right:22px; top:50%; transform:translateY(-50%); font-size:1.5rem; color:var(--sun); font-weight:400; transition:transform .2s; }
+  .faq details[open] summary::after { transform:translateY(-50%) rotate(45deg); }
+  .faq details p { padding:0 24px 22px; color:var(--ink-soft); font-size:.96rem; }
+  .faq details p a { color:var(--teal-deep); font-weight:700; }
+
+  /* CTA */
+  .cta-box { background:radial-gradient(800px 360px at 18% 115%,rgba(255,107,61,.28),transparent 60%),linear-gradient(150deg,#06322E,#00897C); color:#fff; text-align:center; border-radius:var(--radius); padding:70px 30px; box-shadow:var(--shadow); }
+  .cta-box h2 { color:#fff; margin-bottom:12px; }
+  .cta-box p { color:rgba(255,255,255,.85); max-width:520px; margin:0 auto 28px; }
+  .cta-ctas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .cta-box address { margin-top:26px; font-style:normal; font-size:.86rem; color:rgba(255,255,255,.7); font-family:var(--font-mono); }
+
+  /* REVEAL */
+  .reveal { opacity:0; transform:translateY(22px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity:1; transform:none; }
+
+  @media (max-width:920px) {
+    .boards-grid { grid-template-columns:1fr; }
+    .choose-inner { grid-template-columns:1fr; }
+    .how-grid { grid-template-columns:repeat(2,1fr); }
+    .why-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width:640px) {
+    .sl section { padding:58px 0; }
+    .pt-head, .pt-row { grid-template-columns:1.3fr 1fr 1fr 1fr; font-size:.82rem; }
+    .pt-head div, .pt-row div { padding:12px 12px; }
+    .pt-row .price { font-size:1rem; }
+    .how-grid { grid-template-columns:1fr; }
+    .hero-inner { padding:104px 24px 120px; }
+    .funnel-band { padding:34px 28px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity:1; transform:none; transition:none; }
+  }
+</style>
+
+<script>
+  const io = new IntersectionObserver((es) => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+  }), { threshold: .12 })
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el))
+</script>

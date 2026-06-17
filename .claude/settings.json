@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/LuisN/Downloads/**)",
+      "Bash(start \"\" \"c:\\\\Users\\\\LuisN\\\\Desktop\\\\Project 2026\\\\nuevo-sitio\\\\landing-preview.html\")",
+      "Bash(npm install *)",
+      "Bash(npx astro *)",
+      "Bash(npm run *)",
+      "Bash(start \"\" \"http://localhost:4322/\")",
+      "Bash(powershell.exe -NoProfile -Command \"Compress-Archive -Path 'preview-index\\\\*' -DestinationPath 'Outsider-Index-Preview.zip' -Force\")",
+      "Read(//c/Users/LuisN/.claude/projects/c--Users-LuisN-Desktop-Project-2026-nuevo-sitio/memory/**)",
+      "WebFetch(domain:outsidercustoms.com)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\LuisN\\.claude\\projects\\c--Users-LuisN-Desktop-Project-2026-nuevo-sitio\\memory"
+    ]
+  }
+}

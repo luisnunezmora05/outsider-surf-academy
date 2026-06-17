@@ -1,0 +1,45 @@
+---
+export const prerender = true
+import BaseLayout from '../layouts/BaseLayout.astro'
+import BreadcrumbSchema from '../components/seo/BreadcrumbSchema.astro'
+import { seoData, ROUTES } from '../lib/seo'
+
+const seo = seoData.blog
+
+// Add posts here as you publish them. Each links to /src/pages/blog/<slug>.astro
+const posts: { slug: string; category: string; title: string; excerpt: string; date: string }[] = []
+---
+<BaseLayout title={seo.title} description={seo.description} slug={seo.slug} keyfocus={seo.keyfocus} image={seo.image} synonyms={seo.synonyms}>
+  <BreadcrumbSchema slot="head" items={[{name:'Home',href:'/'},{name:'Surf Blog',href:'/blog'}]} />
+
+  <section class="text-white" style="background:linear-gradient(150deg,#0A4A54,#13707E)">
+    <div class="wrap py-16 text-center">
+      <span class="eyebrow" style="color:#FFD9A8">Surf Blog</span>
+      <h1 class="font-display font-semibold text-white" style="font-size:clamp(2rem,4.4vw,3rem)">Surf Tips & Tamarindo Guides</h1>
+      <p class="text-white/85 max-w-2xl mx-auto mt-4">Learn to surf faster, plan your Tamarindo trip, and get insider tips from the Outsider Surf Academy team.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      {posts.length === 0 ? (
+        <div class="surface p-10 text-center max-w-2xl mx-auto">
+          <h2 class="text-[1.4rem] mb-3">New guides coming soon 🌊</h2>
+          <p class="text-ink-soft mb-6">We’re writing beginner guides and Tamarindo surf-trip tips. In the meantime, the fastest way to learn is in the water.</p>
+          <a href={ROUTES.BOOK} class="btn btn-sun">Book a Surf Lesson</a>
+        </div>
+      ) : (
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {posts.map(post => (
+            <a href={post.slug} class="surface p-6 flex flex-col hover:-translate-y-1 transition-transform">
+              <span class="self-start text-xs font-bold px-3 py-1 rounded-full mb-3 bg-sun-soft text-sun">{post.category}</span>
+              <h2 class="text-lg font-bold mb-2 leading-snug flex-1">{post.title}</h2>
+              <p class="text-ink-soft text-sm mb-4">{post.excerpt}</p>
+              <span class="text-xs text-ink-soft mt-auto">{post.date}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>

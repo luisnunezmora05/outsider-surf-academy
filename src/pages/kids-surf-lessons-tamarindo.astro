@@ -1,0 +1,35 @@
+---
+export const prerender = true
+import ServicePage from '../components/sections/ServicePage.astro'
+import { seoData } from '../lib/seo'
+
+const seo = seoData.kidsSurfLessons
+---
+<ServicePage
+  seo={seo}
+  eyebrow="Kids & Family Lessons"
+  h1="Kids & Family Surf Lessons in Tamarindo"
+  intro="Kids from age 6 learn in shallow water with an instructor within arm’s reach, on big stable soft-top boards. Parents can join the same lesson and learn together. Fair warning: your kids will probably stand up before you do."
+  price="Family rates"
+  priceUnit="available"
+  heroPh="from-teal-light to-foam"
+  ctaLabel="Ask About Family Lessons"
+  highlights={[
+    { b: 'From age 6', p: 'Patient, kid-focused instructors who keep it fun, safe and full of small wins.' },
+    { b: 'Always within arm’s reach', p: 'Kids surf in shallow water with the instructor right beside them, the entire time.' },
+    { b: 'Parents can join', p: 'Book the whole family into one session and make it the highlight of the trip.' },
+  ]}
+  includes={[
+    'Big stable soft-top boards',
+    'Rash guard, leash and wax',
+    'Bilingual instructor (EN / ES)',
+    'Shallow-water, beginner-safe zone',
+    'Pre-lesson safety briefing',
+    'Photos of the session',
+  ]}
+  faqs={[
+    { question: 'What’s the minimum age for kids surf lessons?', answer: 'We teach kids from age 6. Younger siblings can sometimes join depending on confidence in the water — message us and we’ll advise.' },
+    { question: 'Is it safe for my child?', answer: 'Yes. Kids learn in shallow, waist-deep water on soft boards with an instructor within arm’s reach, after a safety briefing. If conditions aren’t right for beginners, we reschedule.' },
+    { question: 'Can I do the lesson with my kids?', answer: 'Definitely. Parents are welcome in the same lesson, and family rates are available — just ask when you book.' },
+  ]}
+/>
