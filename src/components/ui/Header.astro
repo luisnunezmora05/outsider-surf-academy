@@ -172,10 +172,12 @@ const navItems: NavItem[] = [
   .site-nav.scrolled .nav-burger span { background: var(--ink); }
 
   .nav-mobile {
+    position: absolute; top: 100%; left: 0; right: 0;
     display: none; flex-direction: column; gap: 1.1rem; list-style: none;
     padding: 1.25rem 1.5rem 1.75rem; background: var(--sand);
     border-bottom: 1px solid rgba(6,50,46,.12);
     box-shadow: 0 14px 30px rgba(6,50,46,.14);
+    max-height: calc(100vh - 74px); overflow-y: auto;
   }
   .nav-mobile[hidden] { display: none; }
   .nav-mobile.open { display: flex; }
