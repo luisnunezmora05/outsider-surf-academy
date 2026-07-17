@@ -29,11 +29,8 @@ const navItems: NavItem[] = [
 
 <header id="siteNav" class:list={['site-nav', transparent ? 'is-transparent' : 'is-solid']}>
   <nav class="nav-inner">
-    <a href="/" class="nav-logo" aria-label="Outsider Surf Academy — home">
-      <span class="nav-mark">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2-4 6-7 10-7s8 3 10 7"/><path d="M2 16c2-4 6-7 10-7s8 3 10 7"/></svg>
-      </span>
-      <span class="nav-brand">Outsider<span class="nav-brand-sub">Surf Academy</span></span>
+    <a href="/" class="nav-logo">
+      <img src="/images/logo_outsider.avif" alt="Outsider Surf Academy" class="nav-logo-img" width="375" height="130" />
     </a>
 
     <ul class="nav-links">
@@ -107,6 +104,8 @@ const navItems: NavItem[] = [
   }
 
   .nav-logo { display: inline-flex; align-items: center; gap: .6rem; }
+  .nav-logo-img { height: 42px; width: auto; display: block; }
+  @media (max-width: 480px) { .nav-logo-img { height: 36px; } }
   .nav-mark {
     width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
     background: var(--teal); color: #fff;
