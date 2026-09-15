@@ -29,7 +29,7 @@ export default function PackagesWidget({ showCamps = true }: Props) {
       <div>
         <button
           onClick={() => setBookingType(null)}
-          className="mb-6 text-sm text-teal-600 hover:text-teal-800 font-semibold flex items-center gap-1"
+          className="mb-6 text-sm text-teal-700 hover:text-teal-800 font-semibold flex items-center gap-1"
         >
           ← Back to packages
         </button>
@@ -62,11 +62,11 @@ export default function PackagesWidget({ showCamps = true }: Props) {
             )}
 
             <div className="p-5 flex flex-col flex-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-teal-700 mb-1">
                 {pkg.category === 'camp' ? 'Surf Camp' : 'Surf Package'}
               </p>
               <h3 className="font-extrabold text-gray-900 text-lg mb-1 leading-tight">{pkg.name}</h3>
-              <p className="text-3xl font-extrabold text-teal-600 mb-3">
+              <p className="text-3xl font-extrabold text-teal-700 mb-3">
                 {formatCurrency(startingPrice.amount)}
                 <span className="text-sm font-normal text-gray-500">{startingPrice.suffix}</span>
               </p>

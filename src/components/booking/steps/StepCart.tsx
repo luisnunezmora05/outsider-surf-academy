@@ -63,7 +63,7 @@ export default function StepCart({
                   <div className="text-right">
                     <p className="font-bold text-teal-700">{formatCurrency(subtotal)}</p>
                     <div className="flex items-center justify-end gap-3 mt-2">
-                      <button type="button" onClick={() => onEdit(index)} className="text-xs text-teal-600 hover:text-teal-800">
+                      <button type="button" onClick={() => onEdit(index)} className="text-xs text-teal-700 hover:text-teal-800">
                         Edit
                       </button>
                       <button type="button" onClick={() => onRemove(index)} className="text-xs text-red-500 hover:text-red-700">

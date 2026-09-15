@@ -81,7 +81,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
       <div>
         <button
           onClick={() => setDurationFor(null)}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-teal-600 mb-4 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-teal-700 mb-4 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -111,7 +111,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
                     Best value
                   </span>
                 )}
-                <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-teal-700 mb-1">
                   {formatDuration(v.duration_minutes)}
                 </p>
                 <p className="text-3xl font-extrabold text-gray-900 mb-1 group-hover:text-teal-700">
@@ -125,7 +125,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
                 )}
                 <p className="text-sm text-gray-500 mt-2 mb-3 leading-snug">{v.description || base.description}</p>
                 <CheckList items={v.included ?? base.included ?? []} />
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-teal-600">
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-teal-700">
                   Select
                   <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -156,7 +156,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
 
       {grouped.map(({ cat, label, entries }) => (
         <div key={cat} className="mb-8">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-3">{label}</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-teal-700 mb-3">{label}</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {entries.map(entry => {
               // ── Grouped card (e.g. 1h / 2h) → opens duration chooser ──
@@ -186,7 +186,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
                     <p className="font-bold text-gray-900 group-hover:text-teal-700 mb-1 pr-16 leading-tight">
                       {prettyGroup(entry.group)}
                     </p>
-                    <p className="text-2xl font-extrabold text-teal-600 mb-0.5">
+                    <p className="text-2xl font-extrabold text-teal-700 mb-0.5">
                       {formatCurrency(anchor)}
                       <span className="text-sm font-normal text-gray-500"> / person</span>
                     </p>
@@ -200,7 +200,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
                     </div>
                     <p className="text-sm text-gray-500 mb-3 leading-snug">{base.description}</p>
                     <CheckList items={base.included ?? []} />
-                    <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-teal-600">
+                    <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-teal-700">
                       Choose duration
                       <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -228,7 +228,7 @@ export default function StepClassType({ classTypes, onSelect }: Props) {
                   <p className="font-bold text-gray-900 group-hover:text-teal-700 mb-1 pr-20 leading-tight">
                     {type.name}
                   </p>
-                  <p className="text-2xl font-extrabold text-teal-600 mb-2">
+                  <p className="text-2xl font-extrabold text-teal-700 mb-2">
                     {hasTiers ? `From ${formatCurrency(startingPrice.amount)}` : formatCurrency(startingPrice.amount)}
                     <span className="text-sm font-normal text-gray-500">{startingPrice.suffix}</span>
                   </p>

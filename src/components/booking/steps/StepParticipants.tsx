@@ -49,11 +49,11 @@ export default function StepParticipants({ classType, participants, onChange, on
         <p className="text-sm text-teal-700 mb-1">Total price</p>
         <p className="text-4xl font-extrabold text-teal-700">{formatCurrency(total)}</p>
         {priceBreakdown.priceType === 'total' ? (
-          <p className="text-sm text-teal-600 mt-1">
+          <p className="text-sm text-teal-700 mt-1">
             {formatCurrency(total)} total for {participants} {participants === 1 ? 'person' : 'people'}
           </p>
         ) : (
-          <p className="text-sm text-teal-600 mt-1">
+          <p className="text-sm text-teal-700 mt-1">
             {formatCurrency(priceBreakdown.unitPrice)} x {participants} {participants === 1 ? 'person' : 'people'}
           </p>
         )}
