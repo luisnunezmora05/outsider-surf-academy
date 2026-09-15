@@ -41,7 +41,7 @@ const EMAIL = 'info@outsidercustoms.com'
     <!-- columns -->
     <div class="footer-grid">
       <nav class="footer-col" aria-label="Lessons">
-        <h4>Lessons</h4>
+        <h2 class="fh">Lessons</h2>
         <a class="fl" href={ROUTES.PRIVATE}>Private Lessons</a>
         <a class="fl" href={ROUTES.SEMI_PRIVATE}>Semi-Private</a>
         <a class="fl" href={ROUTES.GROUP}>Group Lessons</a>
@@ -49,14 +49,14 @@ const EMAIL = 'info@outsidercustoms.com'
         <a class="fl" href={ROUTES.RENTALS}>Surfboard Rentals</a>
       </nav>
       <nav class="footer-col" aria-label="Company">
-        <h4>Company</h4>
+        <h2 class="fh">Company</h2>
         <a class="fl" href={ROUTES.ABOUT}>About Us</a>
         <a class="fl" href={ROUTES.CONTACT}>Contact</a>
         <a class="fl" href={ROUTES.BLOG}>Surf Blog</a>
         <a class="fl" href="/#faq">FAQ</a>
       </nav>
       <div class="footer-col">
-        <h4>Visit us</h4>
+        <h2 class="fh">Visit us</h2>
         <div class="ci"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg> C. Cardinal 100, Tamarindo, Guanacaste, Costa Rica</div>
         <a class="ci" href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg> WhatsApp us</a>
         <a class="ci" href={`mailto:${EMAIL}`}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 6 9-6"/></svg> {EMAIL}</a>
@@ -99,12 +99,12 @@ const EMAIL = 'info@outsidercustoms.com'
   .news-form input::placeholder { color: rgba(247,242,234,.42); }
   .news-form button { width: 40px; height: 40px; flex-shrink: 0; border: none; border-radius: 50%; background: var(--teal); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .25s, transform .25s; }
   .news-form button:hover { background: var(--teal-deep); transform: translateX(3px); }
-  .news-note { margin-top: .75rem; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .04em; color: rgba(247,242,234,.42); }
+  .news-note { margin-top: .75rem; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .04em; color: rgba(247,242,234,.6); }
 
   .footer-divider { height: 1px; background: rgba(247,242,234,.16); margin: 2.8rem 0; }
 
   .footer-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 2.5rem; }
-  .footer-col h4 { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--teal); margin-bottom: 1.15rem; font-weight: 400; }
+  .footer-col .fh { font-family: var(--font-mono); line-height: inherit; font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--teal); margin-bottom: 1.15rem; font-weight: 400; }
   .footer-col a.fl { display: block; font-size: .93rem; color: rgba(247,242,234,.62); margin-bottom: .72rem; transition: color .2s, transform .2s; width: fit-content; }
   .footer-col a.fl:hover { color: #fff; transform: translateX(4px); }
   .ci { display: flex; align-items: flex-start; gap: .7rem; margin-bottom: .95rem; font-size: .93rem; color: rgba(247,242,234,.62); line-height: 1.4; }
@@ -113,7 +113,7 @@ const EMAIL = 'info@outsidercustoms.com'
   a.ci:hover { color: #fff; }
 
   .footer-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-  .footer-copy { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .05em; color: rgba(247,242,234,.42); }
+  .footer-copy { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .05em; color: rgba(247,242,234,.6); }
   .footer-copy b { color: var(--teal); font-weight: 400; }
   .footer-legal { display: flex; gap: 1.6rem; }
   .footer-legal a { font-size: .82rem; color: rgba(247,242,234,.62); transition: color .2s; }

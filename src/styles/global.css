@@ -12,11 +12,14 @@
     --sand:        #F7F2EA;
     --sand-deep:   #EFE6D5;
     --ink:         #06322E;
-    --ink-soft:    #5E6F66;
+    --ink-soft:    #56665E; /* darkened from #5E6F66 for WCAG AA on sand-deep */
     --teal:        #00B4A2;
-    --teal-deep:   #00897C;
+    --teal-deep:   #007268; /* darkened from #00897C: small teal text failed AA on light backgrounds */
     --teal-light:  #5FD3C6;
     --sun:         #FF6B3D;
+    /* CTA fill for white text: #FF6B3D fails WCAG AA with white (2.8:1); this is 5.0:1 */
+    --sun-cta:     #C93F12;
+    --sun-cta-hover: #B3380F;
     --sun-soft:    #FFE9E0;
     --sun-light:   #FF8A63;
     --foam:        #E8F4F2;
@@ -76,7 +79,7 @@
     transition: transform .18s ease, box-shadow .18s ease;
   }
   .btn:hover { transform: translateY(-2px); }
-  .btn-sun { background: var(--sun); color: #fff; box-shadow: 0 14px 28px -12px rgba(255,107,61,.5); }
+  .btn-sun { background: var(--sun-cta); color: #fff; box-shadow: 0 14px 28px -12px rgba(255,107,61,.5); }
   .btn-ghost { background: transparent; color: var(--ink); border: 2px solid rgba(13,59,67,.25); }
   .btn-ghost:hover { border-color: var(--ink); }
   .btn-white { background: #fff; color: var(--teal-deep); }

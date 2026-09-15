@@ -11,11 +11,11 @@ export default {
         },
         ink: {
           DEFAULT: '#06322E',
-          soft: '#5E6F66',
+          soft: '#56665E',
         },
         teal: {
           DEFAULT: '#00B4A2',
-          deep: '#00897C',
+          deep: '#007268',
           light: '#5FD3C6',
         },
         sun: {
