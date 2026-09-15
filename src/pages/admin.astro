@@ -13,7 +13,7 @@ const isAuthenticated = authCookie?.value === ADMIN_PASSWORD
 
 const DOW_LABELS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DISABLED_CAMP_TABS = ['camp-bookings', 'camp-rooms', 'camp-sessions', 'camp-settings']
-const FLORIDA_PRICE_TIERS_EXAMPLE = `[
+const DEFAULT_PRICE_TIERS_EXAMPLE = `[
   { "min_participants": 1, "max_participants": 1, "price_per_person": 75 },
   { "min_participants": 2, "max_participants": 2, "price_per_person": 70 },
   { "min_participants": 3, "max_participants": null, "price_per_person": 65 }
@@ -1391,7 +1391,7 @@ const currentTab = TABS.find(t => t.id === activeTab || (activeTab === '' && t.i
                   <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#0097A7"></div>
                   <div>
                     <div style="font-weight:700;color:#0F172A;font-size:14px">Add service</div>
-                    <div style="font-size:12px;color:#94A3B8;margin-top:2px">Create Florida lesson options like 1-hour and 2-hour surf lessons.</div>
+                    <div style="font-size:12px;color:#94A3B8;margin-top:2px">Create lesson options like group, semi-private and private surf lessons.</div>
                   </div>
                 </div>
                 <svg class="adm-chevron" style="width:18px;height:18px;color:#CBD5E1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1527,7 +1527,7 @@ const currentTab = TABS.find(t => t.id === activeTab || (activeTab === '' && t.i
                           </div>
                         ))}
                       </div>
-                      <textarea name="price_tiers" class="adm-tier-fallback" aria-hidden="true">{FLORIDA_PRICE_TIERS_EXAMPLE}</textarea>
+                      <textarea name="price_tiers" class="adm-tier-fallback" aria-hidden="true">{DEFAULT_PRICE_TIERS_EXAMPLE}</textarea>
                     </div>
                   </div>
                   <button type="submit" class="adm-btn adm-btn-teal">Create Service</button>

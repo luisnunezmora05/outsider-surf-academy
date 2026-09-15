@@ -59,12 +59,12 @@
   "redirects": [
     {
       "source": "/about",
-      "destination": "/best-surf-school-cocoa-beach",
+      "destination": "/about-outsider-surf-academy",
       "permanent": true
     },
     {
       "source": "/about-us",
-      "destination": "/best-surf-school-cocoa-beach",
+      "destination": "/about-outsider-surf-academy",
       "permanent": true
     },
     {
@@ -74,27 +74,37 @@
     },
     {
       "source": "/surf-lessons",
-      "destination": "/surf-packages-cocoa-beach",
-      "permanent": true
-    },
-    {
-      "source": "/surf-camp",
-      "destination": "/surf-camp-cocoa-beach",
+      "destination": "/surf-lessons-tamarindo",
       "permanent": true
     },
     {
       "source": "/packages",
-      "destination": "/surf-packages-cocoa-beach",
+      "destination": "/surf-lessons-tamarindo",
       "permanent": true
     },
     {
       "source": "/private-surf-lessons",
-      "destination": "/private-surf-lessons-cocoa-beach",
+      "destination": "/private-surf-lessons-tamarindo",
+      "permanent": true
+    },
+    {
+      "source": "/semi-private-surf-lessons",
+      "destination": "/semi-private-surf-lessons-tamarindo",
       "permanent": true
     },
     {
       "source": "/group-surf-lessons",
-      "destination": "/group-surf-lessons-cocoa-beach",
+      "destination": "/group-surf-lessons-tamarindo",
+      "permanent": true
+    },
+    {
+      "source": "/kids-surf-lessons",
+      "destination": "/kids-surf-lessons-tamarindo",
+      "permanent": true
+    },
+    {
+      "source": "/surfboard-rentals",
+      "destination": "/surfboard-rentals-tamarindo",
       "permanent": true
     }
   ]

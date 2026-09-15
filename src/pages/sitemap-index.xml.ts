@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 
-const BASE = "https://outsidersurfacademy.com";
+const BASE = "https://www.outsidercustoms.com";
 
 interface SitemapEntry {
   loc: string;

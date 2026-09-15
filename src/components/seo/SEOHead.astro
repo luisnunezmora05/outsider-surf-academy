@@ -10,7 +10,7 @@ export interface Props {
   synonyms?: string[]
 }
 const { title, description, slug, keyfocus, image = '/images/hero-home.jpg', noindex = false, type = 'website', synonyms = [] } = Astro.props
-const site = 'https://outsidersurfacademy.com'
+const site = 'https://www.outsidercustoms.com'
 const canonical = slug === '/' ? site : `${site}${slug}`
 const ogImage = `${site}${image}`
 const jsonLd = {

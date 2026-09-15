@@ -147,10 +147,10 @@ INSERT INTO class_types (
   ('camp-7-semi',   '7-Day Semi-Private Package','camp',    620.37, 1, 10, 10, 90, 'The ultimate week-long surf camp.',                                      ARRAY['6 x 90-min lessons','Accommodation (6 nights)','Breakfast daily','2 surf trips','Surfboard & gear','Airport transfer','Photos & video','Yoga session'], NULL, 10)
 ON CONFLICT (id) DO NOTHING;
 
--- Florida booking cleanup: surf camp is not managed in the admin booking flow.
+-- Booking cleanup: surf camp is not managed in the admin booking flow.
 UPDATE class_types SET active = false WHERE category = 'camp';
 
--- Florida 1-hour lesson pricing:
+-- Legacy 1-hour lesson pricing (the live catalog is in seed-class-types.sql):
 -- 1 person = $75/person, 2 people = $70/person, 3+ people = $65/person.
 UPDATE class_types SET
   name = '1 Hour Surf Lesson',
@@ -184,7 +184,7 @@ INSERT INTO class_types (
   12,
   12,
   120,
-  'Two-hour surf lesson. Add the exact Florida tiered pricing in Admin before making it visible.',
+  'Two-hour surf lesson. Add the tiered pricing in Admin before making it visible.',
   ARRAY['Surfboard','Leash','Rash guard','Certified instructor'],
   NULL,
   2,

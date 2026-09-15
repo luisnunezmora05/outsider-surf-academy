@@ -169,19 +169,6 @@ export const seoData: Record<string, PageSEOWithRoute> = {
     synonyms: ['tamarindo surfing guide', 'surf tips tamarindo'],
     related: ['surf lessons tamarindo', 'surf school tamarindo'],
   }),
-
-  // NOTE: the three inherited blog posts still carry Cocoa Beach content.
-  // Rebrand or replace them; these keys keep the pages compiling for now.
-  isCocoaBeachGoodForSurfing: withRoute('/blog/is-cocoa-beach-good-for-surfing'),
-  beginnersGuideToSurfing: withRoute('/blog/beginners-guide-to-surfing', {
-    title: "The Complete Beginner's Guide to Surfing",
-    description:
-      'Everything you need before your first surf lesson — the pop-up, gear, the mistakes beginners make, and why a lesson beats going it alone.',
-    keyfocus: 'beginners guide to surfing',
-    synonyms: ['how to start surfing', 'learn to surf guide'],
-    related: ['surf lessons tamarindo'],
-  }),
-  surfingNearOrlando: withRoute('/blog/surfing-near-orlando'),
 }
 
 export const ROUTES = {

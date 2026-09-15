@@ -189,7 +189,7 @@ function adminShell(params: {
               <table role="presentation" style="width:100%;border-collapse:collapse;">
                 <tr>
                   <td>
-                    <p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#475569;font-family:'Courier New',monospace;">COCOA SOL SURF · ADMIN</p>
+                    <p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#475569;font-family:'Courier New',monospace;">OUTSIDER SURF ACADEMY · ADMIN</p>
                     <h1 style="margin:0;font-size:22px;font-family:Arial,sans-serif;color:#f1f5f9;font-weight:700;">${title}</h1>
                   </td>
                   <td style="text-align:right;vertical-align:middle;">
@@ -210,7 +210,7 @@ function adminShell(params: {
           <!-- FOOTER -->
           <tr>
             <td style="background:#0f1a24;border:1px solid #1e3a4a;border-radius:0 0 12px 12px;padding:14px 24px;">
-              <p style="margin:0;font-size:11px;color:#334155;font-family:'Courier New',monospace;">COCOA SOL SURF SCHOOL · AUTOMATED NOTIFICATION · ${new Date().toISOString().split('T')[0]}</p>
+              <p style="margin:0;font-size:11px;color:#334155;font-family:'Courier New',monospace;">OUTSIDER SURF ACADEMY · AUTOMATED NOTIFICATION · ${new Date().toISOString().split('T')[0]}</p>
             </td>
           </tr>
 
@@ -560,7 +560,7 @@ export async function sendAdminCartSummaryEmail(data: CartSummaryEmailData): Pro
       </table>
     </div>`
 
-  const adminDashboardUrl = `${import.meta.env.PUBLIC_SITE_URL || 'https://outsidersurfacademy.com'}/admin`
+  const adminDashboardUrl = `${import.meta.env.PUBLIC_SITE_URL || 'https://www.outsidercustoms.com'}/admin`
   const ctaBlock = `
     <div style="padding:0 24px 24px;text-align:center;">
       <a href="${adminDashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#0a7075,#14b8a6);color:#ffffff;font-size:13px;font-weight:700;font-family:Arial,sans-serif;text-decoration:none;padding:11px 28px;border-radius:8px;letter-spacing:.5px;">View in Admin Dashboard →</a>

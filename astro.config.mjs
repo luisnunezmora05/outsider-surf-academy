@@ -26,7 +26,7 @@ function gitLastmod(url) {
 }
 
 export default defineConfig({
-  site: "https://outsidersurfacademy.com",
+  site: "https://www.outsidercustoms.com",
   integrations: [
     react(),
     tailwind({ applyBaseStyles: false }),
@@ -66,6 +66,6 @@ export default defineConfig({
     "/about-us": { destination: "/about-outsider-surf-academy", status: 301 },
     "/book": { destination: "/book-now", status: 301 },
     "/booking": { destination: "/book-now", status: 301 },
-    "/surf-lessons": { destination: "/", status: 301 },
+    "/surf-lessons": { destination: "/surf-lessons-tamarindo", status: 301 },
   },
 });
