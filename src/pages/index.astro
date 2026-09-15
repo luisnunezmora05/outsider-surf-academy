@@ -71,7 +71,7 @@ const faqs = [
       <div class="lpw">
         <div class="stats-grid">
           <div class="stat reveal"><div class="stat-num">1<span>:4</span></div><div class="stat-lbl">Max students / instructor</div></div>
-          <div class="stat reveal"><div class="stat-num">2<span>h</span></div><div class="stat-lbl">Sand + water lesson</div></div>
+          <div class="stat reveal"><div class="stat-num">90<span>min</span></div><div class="stat-lbl">Sand + water lesson</div></div>
           <div class="stat reveal"><div class="stat-num">27–29<span>°C</span></div><div class="stat-lbl">Warm water all year</div></div>
           <div class="stat reveal"><div class="stat-num">100<span>%</span></div><div class="stat-lbl">Equipment included</div></div>
         </div>
@@ -375,11 +375,12 @@ const faqs = [
       linear-gradient(to top, rgba(6,50,46,.68), transparent 42%),
       url('/images/hero-home.jpeg') center 32%/cover; }
   .hero-inner { position:relative; z-index:2; max-width:1180px; margin:0 auto; padding:0 2rem; width:100%; }
-  .hero-content { max-width:680px; animation:lp-fadeUp .9s var(--ease) .1s both; }
-  @keyframes lp-fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  /* No entrance animation: the h1 is the LCP element and a fade-in delays it */
+  .hero-content { max-width:680px; }
   .hero-coords { font-family:var(--font-m); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.82); display:inline-flex; align-items:center; gap:.7rem; margin-bottom:1.6rem; }
   .hero-coords .dot { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:lp-pulse 2.4s ease-out infinite; }
-  @keyframes lp-pulse { 0%{box-shadow:0 0 0 0 rgba(0,180,162,.55);} 70%{box-shadow:0 0 0 10px rgba(0,180,162,0);} 100%{box-shadow:0 0 0 0 rgba(0,180,162,0);} }
+  /* opacity-only so the animation stays on the compositor (box-shadow repaints every frame) */
+  @keyframes lp-pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
   .hero h1 { font-family:var(--font-d); font-optical-sizing:auto; font-size:clamp(2.4rem,5.2vw,4.1rem); font-weight:500; color:#fff; line-height:1.07; letter-spacing:-.018em; margin-bottom:1.4rem; }
   .hero h1 .accent { color:var(--teal); font-style:italic; font-weight:400; }
   .hero-sub { font-size:clamp(1.02rem,1.7vw,1.17rem); color:rgba(255,255,255,.84); max-width:520px; margin-bottom:2.3rem; line-height:1.65; }
@@ -528,6 +529,9 @@ const faqs = [
   .cta-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
   .cta-note { margin-top:1.5rem; font-family:var(--font-m); font-size:.72rem; letter-spacing:.04em; color:rgba(247,242,234,.4); }
 
+  /* skip style/layout/paint of below-the-fold sections until they approach the viewport */
+  .lp > section:not(.stats) { content-visibility:auto; contain-intrinsic-size:auto 900px; }
+
   /* reveal */
   .reveal { opacity:0; transform:translateY(26px); transition:opacity .7s var(--ease), transform .7s var(--ease); }
   .reveal.in { opacity:1; transform:none; }
@@ -548,7 +552,9 @@ const faqs = [
     .hero-ctas { flex-direction:column; align-items:flex-start; }
     .hero-rating { margin:.4rem 0 0; }
     .facts { grid-template-columns:1fr; }
-    .hero-conditions { gap:.8rem 1rem; }
+    /* backdrop blur is expensive on mobile GPUs and was delaying the hero paint */
+    .hero-conditions { gap:.8rem 1rem; -webkit-backdrop-filter:none; backdrop-filter:none; background:rgba(6,50,46,.55); }
+    .img-tag { -webkit-backdrop-filter:none; backdrop-filter:none; background:rgba(6,50,46,.9); }
     .cards { grid-template-columns:1fr; max-width:420px; margin:0 auto; }
     .cta-btns { flex-direction:column; align-items:stretch; }
     .rentals-card { flex-direction:column; align-items:flex-start; gap:1.5rem; padding:2rem 1.6rem; }
