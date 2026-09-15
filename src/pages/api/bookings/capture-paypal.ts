@@ -51,7 +51,12 @@ export const POST: APIRoute = async ({ request }) => {
   // Capture PayPal order
   let paypalOrder
   try {
-    paypalOrder = await capturePayPalOrder(config.paypal_client_id, config.paypal_secret, orderId)
+    paypalOrder = await capturePayPalOrder(
+      config.paypal_client_id,
+      config.paypal_secret,
+      orderId,
+      config.paypal_sandbox !== false
+    )
   } catch (err: any) {
     return json({ error: `PayPal capture failed: ${err.message}` }, 500)
   }

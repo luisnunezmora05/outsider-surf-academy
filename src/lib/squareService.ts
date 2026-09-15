@@ -11,6 +11,35 @@ function getBaseUrl(sandbox: boolean): string {
     : 'https://connect.squareup.com'
 }
 
+// Admin "Test Connection": validates the access token and location without charging anything.
+export async function testSquareConnection(
+  accessToken: string,
+  locationId: string,
+  sandbox: boolean
+): Promise<{ mode: 'sandbox' | 'live'; locationName: string; locationStatus: string; currency: string }> {
+  const res = await fetch(`${getBaseUrl(sandbox)}/v2/locations/${encodeURIComponent(locationId)}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Square-Version': '2024-01-18',
+    },
+  })
+
+  const data = await res.json().catch(() => ({}))
+
+  if (!res.ok) {
+    const detail = data?.errors?.[0]?.detail ?? `Square request failed (${res.status})`
+    throw new Error(detail)
+  }
+
+  const loc = data.location ?? {}
+  return {
+    mode: sandbox ? 'sandbox' : 'live',
+    locationName: loc.name ?? locationId,
+    locationStatus: loc.status ?? 'UNKNOWN',
+    currency: loc.currency ?? '',
+  }
+}
+
 export async function createSquarePayment({
   accessToken,
   sandbox,

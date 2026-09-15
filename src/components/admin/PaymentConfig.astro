@@ -185,6 +185,22 @@ try {
         </div>
       </div>
 
+      <!-- Test Connection (PayPal / Square only) -->
+      <div id="payment-test-wrap" style={`display:${config.provider === 'on-site' ? 'none' : 'block'};margin-top:16px`}>
+        <button
+          type="button"
+          id="payment-test-btn"
+          class="adm-btn"
+          style="width:100%;background:#fff;color:#0F172A;border:1.5px solid #CBD5E1"
+        >
+          🧪 Test Connection
+        </button>
+        <div style="font-size:11px;color:#64748B;margin-top:6px;text-align:center">
+          Uses the values in this form (no need to save first). Nothing is charged.
+        </div>
+        <div id="payment-test-result" hidden style="margin-top:12px;padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.5"></div>
+      </div>
+
       <!-- Save Button -->
       <button
         type="button"
@@ -210,6 +226,46 @@ try {
     })
     document.getElementById('paypal-config').style.display = provider === 'paypal' ? 'block' : 'none'
     document.getElementById('square-config').style.display = provider === 'square' ? 'block' : 'none'
+    document.getElementById('payment-test-wrap').style.display = provider === 'on-site' ? 'none' : 'block'
+    document.getElementById('payment-test-result').hidden = true
+  }
+
+  function buildPayload(form) {
+    var formData = new FormData(form)
+    return {
+      provider: formData.get('provider'),
+      paypal_client_id: formData.get('paypal_client_id') || null,
+      paypal_secret: formData.get('paypal_secret') || null,
+      paypal_sandbox: formData.get('paypal_sandbox') === 'on',
+      square_access_token: formData.get('square_access_token') || null,
+      square_application_id: formData.get('square_application_id') || null,
+      square_location_id: formData.get('square_location_id') || null,
+      square_sandbox: formData.get('square_sandbox') === 'on',
+    }
+  }
+
+  function showTestResult(ok, lines, link) {
+    var box = document.getElementById('payment-test-result')
+    box.replaceChildren()
+    box.style.background = ok ? '#ECFDF5' : '#FEE2E2'
+    box.style.border = '1px solid ' + (ok ? '#A7F3D0' : '#FECDD3')
+    box.style.color = ok ? '#065F46' : '#B91C1C'
+    lines.forEach(function(text, i) {
+      var p = document.createElement('div')
+      p.textContent = text
+      if (i === 0) p.style.fontWeight = '700'
+      box.appendChild(p)
+    })
+    if (link) {
+      var a = document.createElement('a')
+      a.href = link.href
+      a.target = '_blank'
+      a.rel = 'noopener'
+      a.textContent = link.label
+      a.style.cssText = 'display:inline-block;margin-top:8px;font-weight:700;color:#0369A1;text-decoration:underline'
+      box.appendChild(a)
+    }
+    box.hidden = false
   }
 
   function init() {
@@ -227,21 +283,60 @@ try {
       })
     })
 
+    // Test connection button
+    var testBtn = document.getElementById('payment-test-btn')
+    if (testBtn) {
+      testBtn.addEventListener('click', async function() {
+        var payload = buildPayload(form)
+        testBtn.disabled = true
+        testBtn.textContent = 'Testing…'
+
+        try {
+          var res = await fetch('/api/admin/payment-test', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + authToken,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+          var data = await res.json().catch(function() { return {} })
+
+          if (!res.ok) {
+            showTestResult(false, ['✗ Connection failed', data.error || ('HTTP ' + res.status)])
+          } else if (data.provider === 'paypal') {
+            var sandbox = data.mode === 'sandbox'
+            showTestResult(
+              true,
+              [
+                '✓ PayPal connected — ' + (sandbox ? 'SANDBOX (test)' : 'LIVE (real payments)'),
+                'Credentials are valid. Test order ' + data.orderId + ' for $1.00 was created (not captured, nothing charged).',
+                sandbox
+                  ? 'Optional: open the link and log in with a sandbox buyer account to check the checkout page.'
+                  : 'Live mode: do not pay the test order — it would be a real $1.00 payment.',
+              ],
+              sandbox && data.approveUrl ? { href: data.approveUrl, label: 'Open sandbox checkout →' } : null
+            )
+          } else {
+            showTestResult(true, [
+              '✓ Square connected — ' + (data.mode === 'sandbox' ? 'SANDBOX (test)' : 'LIVE (real payments)'),
+              'Location: ' + data.locationName + ' · ' + data.locationStatus + (data.currency ? ' · ' + data.currency : ''),
+            ])
+          }
+        } catch (e) {
+          showTestResult(false, ['✗ Network error', e.message])
+        } finally {
+          testBtn.disabled = false
+          testBtn.textContent = '🧪 Test Connection'
+        }
+      })
+    }
+
     // Save button
     var saveBtn = document.getElementById('payment-config-save-btn')
     if (saveBtn) {
       saveBtn.addEventListener('click', async function() {
-        var formData = new FormData(form)
-        var payload = {
-          provider: formData.get('provider'),
-          paypal_client_id: formData.get('paypal_client_id') || null,
-          paypal_secret: formData.get('paypal_secret') || null,
-          paypal_sandbox: formData.get('paypal_sandbox') === 'on',
-          square_access_token: formData.get('square_access_token') || null,
-          square_application_id: formData.get('square_application_id') || null,
-          square_location_id: formData.get('square_location_id') || null,
-          square_sandbox: formData.get('square_sandbox') === 'on',
-        }
+        var payload = buildPayload(form)
 
         var messageEl = document.getElementById('payment-config-message')
 

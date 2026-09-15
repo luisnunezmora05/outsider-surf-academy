@@ -22,9 +22,10 @@ interface PayPalOrder {
       currency_code?: string
     }
   }>
+  links?: Array<{ href: string; rel: string; method?: string }>
 }
 
-let cachedAccessToken: { token: string; expiresAt: number; sandbox: boolean } | null = null
+let cachedAccessToken: { token: string; expiresAt: number; sandbox: boolean; clientId: string } | null = null
 
 function getBaseUrl(sandbox: boolean): string {
   return sandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
@@ -32,7 +33,12 @@ function getBaseUrl(sandbox: boolean): string {
 
 async function getPayPalAccessToken(clientId: string, secret: string, sandbox: boolean = true): Promise<string> {
   // Return cached token if still valid and same mode
-  if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now() && cachedAccessToken.sandbox === sandbox) {
+  if (
+    cachedAccessToken &&
+    cachedAccessToken.expiresAt > Date.now() &&
+    cachedAccessToken.sandbox === sandbox &&
+    cachedAccessToken.clientId === clientId
+  ) {
     return cachedAccessToken.token
   }
 
@@ -56,6 +62,7 @@ async function getPayPalAccessToken(clientId: string, secret: string, sandbox: b
     token: data.access_token,
     expiresAt: Date.now() + data.expires_in * 1000 - 60000,
     sandbox,
+    clientId,
   }
 
   return data.access_token
@@ -130,6 +137,49 @@ export async function capturePayPalOrder(
   }
 
   return (await response.json()) as PayPalOrder
+}
+
+export interface PayPalConnectionTest {
+  mode: 'sandbox' | 'live'
+  orderId: string
+  approveUrl: string | null
+}
+
+// Admin "Test Connection": authenticates and creates a $1.00 order that is never captured,
+// so nothing is charged. In sandbox the approve link can be paid with a sandbox buyer account.
+export async function testPayPalConnection(
+  clientId: string,
+  secret: string,
+  sandbox: boolean
+): Promise<PayPalConnectionTest> {
+  const accessToken = await getPayPalAccessToken(clientId, secret, sandbox)
+  const baseUrl = getBaseUrl(sandbox)
+
+  const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          description: 'Admin connection test',
+          amount: { currency_code: 'USD', value: '1.00' },
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error(`PayPal order creation failed: ${JSON.stringify(error)}`)
+  }
+
+  const order = (await response.json()) as PayPalOrder
+  const approve = order.links?.find(l => l.rel === 'approve' || l.rel === 'payer-action')
+  return { mode: sandbox ? 'sandbox' : 'live', orderId: order.id, approveUrl: approve?.href ?? null }
 }
 
 export async function getPayPalOrder(
