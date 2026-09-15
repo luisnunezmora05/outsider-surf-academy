@@ -424,7 +424,7 @@ export async function sendCartSummaryEmail(data: CartSummaryEmailData): Promise<
     ${sessionCards}
     ${totalBox}
     ${prepareSection}
-    <p style="margin:20px 0 0;font-size:13px;color:#94a3b8;font-family:Arial,sans-serif;">Questions? Reply to this email or message us on WhatsApp at +1 (321) 386-9993. We reply fast.</p>
+    <p style="margin:20px 0 0;font-size:13px;color:#94a3b8;font-family:Arial,sans-serif;">Questions? Reply to this email or message us on WhatsApp at <a href="https://wa.me/50686135937" style="color:#0f766e;text-decoration:none;font-weight:600;">+506 8613 5937</a>. We reply fast.</p>
   `
 
   const html = clientShell({
